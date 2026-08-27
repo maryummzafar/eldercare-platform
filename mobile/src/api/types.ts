@@ -1,0 +1,129 @@
+/**
+ * Mirrors the backend DTOs in com.eldercare_platform.dto. Kept hand-written rather
+ * than generated so the field names stay reviewable against the Java source; if a
+ * DTO changes, change it here in the same commit.
+ *
+ * BigDecimal serialises as a JSON number and Instant as an ISO-8601 string, per
+ * spring.jackson.serialization.write-dates-as-timestamps=false.
+ */
+
+export type UserRole = 'ELDER' | 'HELPER' | 'ADMIN';
+
+export type ServiceType =
+  | 'HOSPITAL_VISIT'
+  | 'GROCERY_SHOPPING'
+  | 'HOUSE_HELP'
+  | 'COMPANIONSHIP'
+  | 'MEDICATION_PICKUP'
+  | 'TRANSPORT';
+
+export type BookingStatus =
+  | 'REQUESTED'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'IN_PROGRESS'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+/** Wording shown to users. The enum names themselves are not user-facing. */
+export const SERVICE_LABELS: Record<ServiceType, string> = {
+  HOSPITAL_VISIT: 'Hospital visit',
+  GROCERY_SHOPPING: 'Grocery shopping',
+  HOUSE_HELP: 'House help',
+  COMPANIONSHIP: 'Companionship',
+  MEDICATION_PICKUP: 'Medication pickup',
+  TRANSPORT: 'Transport',
+};
+
+export const STATUS_LABELS: Record<BookingStatus, string> = {
+  REQUESTED: 'Waiting for helper',
+  ACCEPTED: 'Confirmed',
+  REJECTED: 'Declined',
+  IN_PROGRESS: 'In progress',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+};
+
+export const ALL_SERVICES = Object.keys(SERVICE_LABELS) as ServiceType[];
+
+export interface AuthResponse {
+  token: string;
+  userId: number;
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  role: Extract<UserRole, 'ELDER' | 'HELPER'>;
+  phone?: string;
+  address?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface HelperResponse {
+  helperId: number;
+  name: string;
+  bio: string | null;
+  city: string | null;
+  hourlyRate: number;
+  offeredServices: ServiceType[];
+  averageRating: number | null;
+  completedBookings: number;
+  acceptingBookings: boolean;
+}
+
+export interface HelperProfileRequest {
+  bio?: string;
+  hourlyRate: number;
+  city?: string;
+  offeredServices: ServiceType[];
+  acceptingBookings?: boolean;
+}
+
+export interface BookingResponse {
+  id: number;
+  elderId: number;
+  elderName: string;
+  helperId: number;
+  helperName: string;
+  serviceType: ServiceType;
+  status: BookingStatus;
+  scheduledStart: string;
+  scheduledEnd: string;
+  actualStart: string | null;
+  actualEnd: string | null;
+  hourlyRate: number;
+  estimatedTotal: number | null;
+  finalTotal: number | null;
+  serviceAddress: string | null;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface CreateBookingRequest {
+  helperId: number;
+  serviceType: ServiceType;
+  scheduledStart: string;
+  scheduledEnd: string;
+  serviceAddress?: string;
+  notes?: string;
+}
+
+/** Spring Data's Page envelope, narrowed to the fields the app reads. */
+export interface Page<T> {
+  content: T[];
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  first: boolean;
+  last: boolean;
+}

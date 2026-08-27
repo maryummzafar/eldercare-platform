@@ -1,0 +1,183 @@
+import Constants from 'expo-constants';
+
+import type {
+  AuthResponse,
+  BookingResponse,
+  CreateBookingRequest,
+  HelperProfileRequest,
+  HelperResponse,
+  LoginRequest,
+  Page,
+  RegisterRequest,
+  ServiceType,
+} from './types';
+
+/**
+ * The backend's SERVER_PORT. Note this is also Metro's default port, so when both
+ * run on one machine the bundler shifts itself to 8082 and this stays correct —
+ * we only borrow the *host* from Expo, never its port.
+ */
+const API_PORT = 8081;
+
+/**
+ * A phone on the LAN cannot reach the laptop's `localhost`, so derive the dev
+ * machine's address from the URI Expo is already serving the bundle over. Set
+ * `extra.apiUrl` in app.json to point at a deployed backend instead.
+ */
+function resolveBaseUrl(): string {
+  const configured = Constants.expoConfig?.extra?.apiUrl;
+  if (typeof configured === 'string' && configured.length > 0) {
+    return configured.replace(/\/+$/, '');
+  }
+
+  const host = Constants.expoConfig?.hostUri?.split(':')[0];
+  if (host) return `http://${host}:${API_PORT}`;
+
+  // Only reached in a production build with no apiUrl configured.
+  return `http://localhost:${API_PORT}`;
+}
+
+export const BASE_URL = resolveBaseUrl();
+
+/**
+ * A non-2xx response from the API. `fieldErrors` is present only on 400s raised
+ * by bean validation, keyed by the DTO field name.
+ */
+export class ApiError extends Error {
+  readonly status: number;
+  readonly fieldErrors?: Record<string, string>;
+
+  constructor(status: number, message: string, fieldErrors?: Record<string, string>) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.fieldErrors = fieldErrors;
+  }
+}
+
+let authToken: string | null = null;
+let onUnauthorized: (() => void) | null = null;
+
+export function setAuthToken(token: string | null): void {
+  authToken = token;
+}
+
+/**
+ * Registered by AuthContext so an expired token drops the user at login exactly
+ * once, from wherever they were. 403 is deliberately not routed here — that means
+ * "signed in, not allowed", which screens surface as an ordinary error.
+ */
+export function setUnauthorizedHandler(handler: (() => void) | null): void {
+  onUnauthorized = handler;
+}
+
+async function request<T>(
+  path: string,
+  options: { method?: string; body?: unknown; query?: Record<string, unknown> } = {},
+): Promise<T> {
+  const { method = 'GET', body, query } = options;
+
+  const url = new URL(`${BASE_URL}${path}`);
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (value !== undefined && value !== null && value !== '') {
+        url.searchParams.set(key, String(value));
+      }
+    }
+  }
+
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method,
+      headers: {
+        Accept: 'application/json',
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch {
+    // fetch only rejects on transport failure, which on a phone almost always
+    // means the dev server address is wrong or the backend is not running.
+    throw new ApiError(0, `Could not reach the server at ${BASE_URL}. Check it is running.`);
+  }
+
+  if (response.status === 401) {
+    onUnauthorized?.();
+    throw new ApiError(401, 'Your session has expired. Please sign in again.');
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
+  const raw = await response.text();
+  const payload = raw ? safeParse(raw) : null;
+
+  if (!response.ok) {
+    const message =
+      (payload && typeof payload === 'object' && 'message' in payload
+        ? String((payload as { message: unknown }).message)
+        : null) ?? `Request failed (${response.status})`;
+    const fieldErrors =
+      payload && typeof payload === 'object' && 'fieldErrors' in payload
+        ? ((payload as { fieldErrors: Record<string, string> }).fieldErrors)
+        : undefined;
+    throw new ApiError(response.status, message, fieldErrors);
+  }
+
+  return payload as T;
+}
+
+function safeParse(raw: string): unknown {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+export const api = {
+  register: (body: RegisterRequest) =>
+    request<AuthResponse>('/api/auth/register', { method: 'POST', body }),
+
+  login: (body: LoginRequest) =>
+    request<AuthResponse>('/api/auth/login', { method: 'POST', body }),
+
+  searchHelpers: (query: {
+    city?: string;
+    maxRate?: number;
+    service?: ServiceType;
+    page?: number;
+    size?: number;
+  }) => request<Page<HelperResponse>>('/api/helpers', { query }),
+
+  getHelper: (helperUserId: number) => request<HelperResponse>(`/api/helpers/${helperUserId}`),
+
+  getMyHelperProfile: () => request<HelperResponse>('/api/helpers/me'),
+
+  saveMyHelperProfile: (body: HelperProfileRequest) =>
+    request<HelperResponse>('/api/helpers/me', { method: 'PUT', body }),
+
+  createBooking: (body: CreateBookingRequest) =>
+    request<BookingResponse>('/api/bookings', { method: 'POST', body }),
+
+  listBookings: (query: { page?: number; size?: number } = {}) =>
+    request<Page<BookingResponse>>('/api/bookings', { query }),
+
+  getBooking: (id: number) => request<BookingResponse>(`/api/bookings/${id}`),
+
+  // The lifecycle transitions. Which of these a given user may call is enforced
+  // server-side by role and participation; the UI only hides what it knows.
+  acceptBooking: (id: number) =>
+    request<BookingResponse>(`/api/bookings/${id}/accept`, { method: 'POST' }),
+  rejectBooking: (id: number) =>
+    request<BookingResponse>(`/api/bookings/${id}/reject`, { method: 'POST' }),
+  startBooking: (id: number) =>
+    request<BookingResponse>(`/api/bookings/${id}/start`, { method: 'POST' }),
+  completeBooking: (id: number) =>
+    request<BookingResponse>(`/api/bookings/${id}/complete`, { method: 'POST' }),
+  cancelBooking: (id: number) =>
+    request<BookingResponse>(`/api/bookings/${id}/cancel`, { method: 'POST' }),
+};
