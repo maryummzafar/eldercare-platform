@@ -1,14 +1,63 @@
 spring:
+  application:
+    name: eldercare
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/eldercare
-    username: postgres
-    password: Dhyaanmatdo@123
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/eldercare}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      # Fine for development. Switch to `validate` and manage schema with Flyway
+      # before the first real deployment, or an entity rename will drop a column.
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: ${JPA_SHOW_SQL:true}
+    # Keep the persistence context out of the view layer so lazy loads fail loudly
+    # in the service tier instead of silently issuing queries during serialization.
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+
+  jackson:
+    # Serialize Instants as ISO-8601 strings, which mobile clients parse natively.
+    serialization:
+      write-dates-as-timestamps: false
+
+app:
+  # Seeds the first admin on startup if this account does not exist yet.
+  # Leave unset in environments that already have an admin.
+  admin:
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
+
+  jwt:
+    # Base64-encoded, at least 256 bits of randomness. No default on purpose:
+    # the app must fail to start rather than run on a guessable signing key.
+    # Generate one with:  openssl rand -base64 48
+    secret: ${JWT_SECRET}
+    # 24 hours.
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
 server:
-  port: 8081
+  port: ${SERVER_PORT:8081}
+
+logging:
+  level:
+    # AppConfig builds its own DaoAuthenticationProvider so it can set the password
+    # encoder explicitly. Spring then warns that auto-configuration will not wire the
+    # UserDetailsService bean itself — which is the intended arrangement here, since
+    # the provider is handed CustomUserDetailsService directly. Silence the notice.
+    "[org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer]": error
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
