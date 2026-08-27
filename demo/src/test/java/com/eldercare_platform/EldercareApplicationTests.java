@@ -1,10 +1,12 @@
-package com.elderlcare_platform;
+package com.eldercare_platform;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
-class DemoApplicationTests {
+@ActiveProfiles("test")
+class EldercareApplicationTests {
 
 	@Test
 	void contextLoads() {
