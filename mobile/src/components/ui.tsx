@@ -11,7 +11,7 @@ import {
 import type { KeyboardTypeOptions, StyleProp, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { TOUCH_TARGET, colors, radius, spacing, type } from '../theme';
+import { CONTENT_MAX_WIDTH, TOUCH_TARGET, colors, radius, spacing, type } from '../theme';
 
 export function Screen({
   children,
@@ -188,7 +188,14 @@ export function Loading({ label = 'Loading' }: { label?: string }) {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
-  screenBody: { flex: 1, gap: spacing.md },
+  screenBody: {
+    flex: 1,
+    gap: spacing.md,
+    // Centres the column on anything wider than a phone. No effect below the cap.
+    width: '100%',
+    maxWidth: CONTENT_MAX_WIDTH,
+    alignSelf: 'center',
+  },
   scrollContent: { padding: spacing.lg, paddingBottom: spacing.xl, flexGrow: 1 },
 
   title: { ...type.title, color: colors.text },

@@ -58,6 +58,14 @@ export const spacing = {
  */
 export const TOUCH_TARGET = 48;
 
+/**
+ * Content never stretches past this. On a phone it is wider than the screen and so
+ * does nothing; on a tablet, a landscape phone, or the web preview on a laptop it
+ * stops lines of text running to 1200px, which is unreadable at our 18sp body size.
+ * Screens stay a single centred column rather than gaining a desktop layout.
+ */
+export const CONTENT_MAX_WIDTH = 560;
+
 export const radius = {
   sm: 8,
   md: 12,
