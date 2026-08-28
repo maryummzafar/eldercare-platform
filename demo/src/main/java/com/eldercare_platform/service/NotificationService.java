@@ -80,4 +80,14 @@ public class NotificationService {
     public void markAllRead(User user) {
         notificationRepository.markAllRead(user.getId());
     }
+
+    /**
+     * Called when a reader opens a booking's chat. Without this the badge keeps
+     * advertising a message the user has just finished reading.
+     */
+    @Transactional
+    public void markMessageNotificationsRead(User reader, Long bookingId) {
+        notificationRepository.markReadForBooking(
+                reader.getId(), bookingId, NotificationType.MESSAGE_RECEIVED);
+    }
 }

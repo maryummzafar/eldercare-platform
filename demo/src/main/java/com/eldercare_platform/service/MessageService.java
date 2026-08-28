@@ -84,11 +84,19 @@ public class MessageService {
         return MessageResponse.from(saved);
     }
 
-    /** Called when a participant opens the thread. Returns how many were newly marked. */
+    /**
+     * Called when a participant opens the thread. Returns how many messages were
+     * newly marked.
+     *
+     * Also clears this booking's message notifications for the reader: having read
+     * the thread, they should not come back to a badge pointing at it.
+     */
     @Transactional
     public int markRead(User reader, Long bookingId) {
         Booking booking = loadParticipating(reader, bookingId);
-        return messageRepository.markThreadRead(booking.getId(), reader.getId(), Instant.now());
+        int marked = messageRepository.markThreadRead(booking.getId(), reader.getId(), Instant.now());
+        notificationService.markMessageNotificationsRead(reader, booking.getId());
+        return marked;
     }
 
     private static String preview(String body) {
