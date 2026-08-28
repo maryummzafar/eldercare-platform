@@ -37,6 +37,18 @@ To point at a deployed backend instead, set `extra.apiUrl` in `app.json`:
 | Auth   | Login, register as elder or helper, session restored from the keystore    |
 | Elder  | Search verified helpers by city and service, view a profile, request a booking, see and cancel bookings |
 | Helper | Create/edit profile with rate and offered services, accept/decline requests, start and complete visits |
+| Chat   | One thread per booking, reachable from any booking card and from a message notification |
+| Alerts | Bell with unread badge on every screen, plus a notification centre        |
+
+### Chat and notifications
+
+Both are **polled**, not pushed — there is no device push yet, so the poll is the
+delivery mechanism. An open chat refreshes every 5s; the unread badge every 20s and
+whenever the app returns to the foreground. Both intervals are torn down on unmount,
+so a backgrounded screen costs nothing.
+
+Threads are keyed by booking id, so `/chat/[bookingId]` is the whole routing story
+and the server rejects anyone who is not on that booking.
 
 Routing is decided once, in [`app/index.tsx`](app/index.tsx), from the `role` the API
 returns at login. Admins land on an explanatory screen — vetting happens through the
@@ -52,6 +64,8 @@ The paying users are elderly, so the defaults are deliberately not the mobile no
 - No text colour falls below **4.5:1** contrast on its background.
 - Selection is signalled by border weight *and* fill, never colour alone.
 - Navigation is explicit on-screen buttons — no gesture-only paths.
+- Content is capped at `CONTENT_MAX_WIDTH` and centred, so a tablet, a landscape
+  phone or the laptop web preview gets one readable column instead of 1400px lines.
 
 Prefer the tokens in `src/theme.ts` and the components in `src/components/ui.tsx` over
 ad-hoc styles, so these floors hold as screens get added.

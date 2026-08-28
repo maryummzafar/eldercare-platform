@@ -87,6 +87,38 @@ A helper is not searchable until **both** `verified` (admin-granted) and
 | POST   | `/api/bookings/{id}/complete` | helper      | `IN_PROGRESS` → `COMPLETED`, sets `finalTotal` |
 | POST   | `/api/bookings/{id}/cancel`   | either      | Cancels while `REQUESTED` or `ACCEPTED` |
 
+### Messages
+
+Chat is scoped to a booking rather than to a pair of users: the booking *is* the
+thread. That makes "may these two people talk?" the same question as "are they both
+on this booking?", so there is no separate contacts or blocking model, and an elder
+cannot message a helper they have never booked.
+
+| Method | Path                                  | Who         | Notes                                   |
+|--------|---------------------------------------|-------------|-----------------------------------------|
+| GET    | `/api/bookings/{id}/messages`         | participant | Whole thread, oldest first.             |
+| POST   | `/api/bookings/{id}/messages`         | participant | Sends one message (max 2000 chars).     |
+| POST   | `/api/bookings/{id}/messages/read`    | participant | Marks the other side's messages read.   |
+
+Threads on `REJECTED` or `CANCELLED` bookings are read-only — the history stays
+visible, but nobody can keep messaging through a booking the other side declined.
+
+### Notifications
+
+In-app only; there is no device push yet. The client polls. Every notification in the
+system is written through `NotificationService.notify`, which is the single place a
+push sender would be added.
+
+| Method | Path                              | Effect                                    |
+|--------|-----------------------------------|-------------------------------------------|
+| GET    | `/api/notifications`              | The caller's notifications, newest first. |
+| GET    | `/api/notifications/unread-count` | Just the count — polled by the badge.     |
+| POST   | `/api/notifications/{id}/read`    | Marks one read.                           |
+| POST   | `/api/notifications/read-all`     | Marks all read.                           |
+
+Written automatically on every booking transition (to whichever party did not cause
+it) and on every incoming chat message.
+
 ### Admin
 
 | Method | Path                                            | Effect                          |
