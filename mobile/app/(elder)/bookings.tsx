@@ -69,9 +69,24 @@ export default function ElderBookings() {
             counterpartyName={booking.helperName}
             busy={actingOn === booking.id}
             // Cancelling is only legal before the visit starts; offering the
-            // button later would just surface a server error.
-            actions={
-              booking.status === 'REQUESTED' || booking.status === 'ACCEPTED'
+            // button later would just surface a server error. Messaging stays
+            // available afterwards so questions about a finished visit have
+            // somewhere to go.
+            actions={[
+              ...(booking.status === 'REJECTED' || booking.status === 'CANCELLED'
+                ? []
+                : [
+                    {
+                      label: `Message ${booking.helperName}`,
+                      variant: 'secondary' as const,
+                      onPress: () =>
+                        router.push({
+                          pathname: '/chat/[bookingId]',
+                          params: { bookingId: booking.id },
+                        }),
+                    },
+                  ]),
+              ...(booking.status === 'REQUESTED' || booking.status === 'ACCEPTED'
                 ? [
                     {
                       label: 'Cancel this booking',
@@ -79,8 +94,8 @@ export default function ElderBookings() {
                       onPress: () => cancel(booking.id),
                     },
                   ]
-                : undefined
-            }
+                : []),
+            ]}
           />
         ))
       )}

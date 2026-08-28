@@ -6,6 +6,8 @@ import com.eldercare_platform.entity.Booking;
 import com.eldercare_platform.entity.HelperProfile;
 import com.eldercare_platform.entity.User;
 import com.eldercare_platform.enums.BookingStatus;
+import com.eldercare_platform.enums.NotificationType;
+import com.eldercare_platform.enums.ServiceType;
 import com.eldercare_platform.enums.UserRole;
 import com.eldercare_platform.exception.ApiException;
 import com.eldercare_platform.repository.BookingRepository;
@@ -41,6 +43,7 @@ public class BookingService {
     private final BookingRepository bookingRepository;
     private final HelperProfileRepository helperProfileRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public BookingResponse create(User elder, CreateBookingRequest request) {
@@ -108,7 +111,17 @@ public class BookingService {
                 .notes(request.getNotes())
                 .build();
 
-        return BookingResponse.from(bookingRepository.save(booking));
+        Booking saved = bookingRepository.save(booking);
+
+        notificationService.notifyAboutBooking(
+                helperUser,
+                NotificationType.BOOKING_REQUESTED,
+                "New booking request",
+                elder.getName() + " has requested " + describe(request.getServiceType())
+                        + ". Open it to accept or decline.",
+                saved);
+
+        return BookingResponse.from(saved);
     }
 
     @Transactional(readOnly = true)
@@ -141,6 +154,14 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.ACCEPTED);
+
+        notificationService.notifyAboutBooking(
+                booking.getElder(),
+                NotificationType.BOOKING_ACCEPTED,
+                "Booking accepted",
+                helper.getName() + " accepted your request for " + describe(booking.getServiceType()) + ".",
+                booking);
+
         return BookingResponse.from(booking);
     }
 
@@ -150,6 +171,15 @@ public class BookingService {
         Booking booking = loadAsHelper(helper, bookingId);
         requireStatus(booking, BookingStatus.REQUESTED);
         booking.setStatus(BookingStatus.REJECTED);
+
+        notificationService.notifyAboutBooking(
+                booking.getElder(),
+                NotificationType.BOOKING_REJECTED,
+                "Booking declined",
+                helper.getName() + " cannot take your request for " + describe(booking.getServiceType())
+                        + ". You can search for another helper.",
+                booking);
+
         return BookingResponse.from(booking);
     }
 
@@ -160,6 +190,14 @@ public class BookingService {
         requireStatus(booking, BookingStatus.ACCEPTED);
         booking.setStatus(BookingStatus.IN_PROGRESS);
         booking.setActualStart(Instant.now());
+
+        notificationService.notifyAboutBooking(
+                booking.getElder(),
+                NotificationType.BOOKING_STARTED,
+                "Visit started",
+                helper.getName() + " has started your visit.",
+                booking);
+
         return BookingResponse.from(booking);
     }
 
@@ -181,6 +219,14 @@ public class BookingService {
         helperProfileRepository.findByUserId(helper.getId()).ifPresent(profile ->
                 profile.setCompletedBookings(profile.getCompletedBookings() + 1));
 
+        notificationService.notifyAboutBooking(
+                booking.getElder(),
+                NotificationType.BOOKING_COMPLETED,
+                "Visit completed",
+                helper.getName() + " completed your visit. Total: "
+                        + booking.getFinalTotal().toPlainString() + ".",
+                booking);
+
         return BookingResponse.from(booking);
     }
 
@@ -196,6 +242,18 @@ public class BookingService {
         }
 
         booking.setStatus(BookingStatus.CANCELLED);
+
+        // Whoever did not press cancel is the one who needs telling.
+        User otherParty = booking.getElder().getId().equals(user.getId())
+                ? booking.getHelper()
+                : booking.getElder();
+        notificationService.notifyAboutBooking(
+                otherParty,
+                NotificationType.BOOKING_CANCELLED,
+                "Booking cancelled",
+                user.getName() + " cancelled the " + describe(booking.getServiceType()) + " booking.",
+                booking);
+
         return BookingResponse.from(booking);
     }
 
@@ -204,6 +262,11 @@ public class BookingService {
      * with a one-hour floor. Rounding up matches how the helper's time is actually
      * consumed and keeps short call-outs worth taking.
      */
+    /** HOSPITAL_VISIT -> "a hospital visit", for notification copy elders actually read. */
+    private static String describe(ServiceType serviceType) {
+        return "a " + serviceType.name().toLowerCase().replace('_', ' ');
+    }
+
     private BigDecimal billableHours(Duration duration) {
         long quarters = (duration.toMinutes() + 14) / 15;
         BigDecimal hours = BigDecimal.valueOf(quarters)

@@ -21,6 +21,15 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="(elder)" options={{ headerShown: false }} />
           <Stack.Screen name="(helper)" options={{ headerShown: false }} />
+          {/* Reachable from both roles, so they live above the role groups. */}
+          <Stack.Screen
+            name="notifications"
+            options={{ title: 'Notifications', headerBackTitle: 'Back' }}
+          />
+          <Stack.Screen
+            name="chat/[bookingId]"
+            options={{ title: 'Messages', headerBackTitle: 'Back' }}
+          />
         </Stack>
       </AuthProvider>
     </SafeAreaProvider>

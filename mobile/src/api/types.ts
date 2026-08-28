@@ -127,3 +127,44 @@ export interface Page<T> {
   first: boolean;
   last: boolean;
 }
+
+export type NotificationType =
+  | 'BOOKING_REQUESTED'
+  | 'BOOKING_ACCEPTED'
+  | 'BOOKING_REJECTED'
+  | 'BOOKING_STARTED'
+  | 'BOOKING_COMPLETED'
+  | 'BOOKING_CANCELLED'
+  | 'MESSAGE_RECEIVED';
+
+export interface NotificationResponse {
+  id: number;
+  type: NotificationType;
+  title: string;
+  body: string;
+  bookingId: number | null;
+  read: boolean;
+  createdAt: string;
+}
+
+export interface UnreadCountResponse {
+  unread: number;
+}
+
+/**
+ * A chat message. Threads are keyed by booking — there is no conversation id,
+ * because the booking is the conversation.
+ */
+export interface MessageResponse {
+  id: number;
+  bookingId: number;
+  senderId: number;
+  senderName: string;
+  body: string;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface SendMessageRequest {
+  body: string;
+}

@@ -8,8 +8,12 @@ import type {
   HelperResponse,
   LoginRequest,
   Page,
+  MessageResponse,
+  NotificationResponse,
   RegisterRequest,
+  SendMessageRequest,
   ServiceType,
+  UnreadCountResponse,
 } from './types';
 
 /**
@@ -180,4 +184,27 @@ export const api = {
     request<BookingResponse>(`/api/bookings/${id}/complete`, { method: 'POST' }),
   cancelBooking: (id: number) =>
     request<BookingResponse>(`/api/bookings/${id}/cancel`, { method: 'POST' }),
+
+  // Chat. The booking id is the thread id; the server rejects non-participants.
+  listMessages: (bookingId: number) =>
+    request<MessageResponse[]>(`/api/bookings/${bookingId}/messages`),
+
+  sendMessage: (bookingId: number, body: SendMessageRequest) =>
+    request<MessageResponse>(`/api/bookings/${bookingId}/messages`, { method: 'POST', body }),
+
+  markThreadRead: (bookingId: number) =>
+    request<void>(`/api/bookings/${bookingId}/messages/read`, { method: 'POST' }),
+
+  // Notification centre.
+  listNotifications: (query: { page?: number; size?: number } = {}) =>
+    request<Page<NotificationResponse>>('/api/notifications', { query }),
+
+  unreadNotificationCount: () =>
+    request<UnreadCountResponse>('/api/notifications/unread-count'),
+
+  markNotificationRead: (id: number) =>
+    request<NotificationResponse>(`/api/notifications/${id}/read`, { method: 'POST' }),
+
+  markAllNotificationsRead: () =>
+    request<void>('/api/notifications/read-all', { method: 'POST' }),
 };

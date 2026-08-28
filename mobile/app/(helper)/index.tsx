@@ -52,10 +52,20 @@ export default function HelperVisits() {
     }
   }
 
+  /** Available on any booking that is not already dead, in both directions. */
+  function messageAction(booking: BookingResponse): BookingAction {
+    return {
+      label: `Message ${booking.elderName}`,
+      variant: 'secondary',
+      onPress: () => router.push({ pathname: '/chat/[bookingId]', params: { bookingId: booking.id } }),
+    };
+  }
+
   function actionsFor(booking: BookingResponse): BookingAction[] | undefined {
     switch (booking.status) {
       case 'REQUESTED':
         return [
+          messageAction(booking),
           { label: 'Accept', onPress: () => act(booking.id, () => api.acceptBooking(booking.id)) },
           {
             label: 'Decline',
@@ -65,6 +75,7 @@ export default function HelperVisits() {
         ];
       case 'ACCEPTED':
         return [
+          messageAction(booking),
           {
             label: 'Start visit',
             onPress: () => act(booking.id, () => api.startBooking(booking.id)),
@@ -77,12 +88,17 @@ export default function HelperVisits() {
         ];
       case 'IN_PROGRESS':
         return [
+          messageAction(booking),
           {
             label: 'Complete visit',
             onPress: () => act(booking.id, () => api.completeBooking(booking.id)),
           },
         ];
+      case 'COMPLETED':
+        // Nothing left to do, but a finished visit can still raise questions.
+        return [messageAction(booking)];
       default:
+        // REJECTED and CANCELLED: the server closes the thread, so offer nothing.
         return undefined;
     }
   }
