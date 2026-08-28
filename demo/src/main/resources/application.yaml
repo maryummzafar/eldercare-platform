@@ -8,11 +8,20 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    # The schema predates Flyway, so an existing database is stamped as already
+    # being at V1 rather than having V1 run against it. A brand-new database has
+    # no tables, so V1 runs normally. Safe to leave on permanently.
+    baseline-on-migrate: true
+    baseline-version: 1
+
   jpa:
     hibernate:
-      # Fine for development. Switch to `validate` and manage schema with Flyway
-      # before the first real deployment, or an entity rename will drop a column.
-      ddl-auto: ${JPA_DDL_AUTO:update}
+      # Flyway owns the schema now. Hibernate only checks the entities still match
+      # what is actually there and refuses to start if they have drifted; it no
+      # longer alters anything itself.
+      ddl-auto: ${JPA_DDL_AUTO:validate}
     show-sql: ${JPA_SHOW_SQL:true}
     # Keep the persistence context out of the view layer so lazy loads fail loudly
     # in the service tier instead of silently issuing queries during serialization.

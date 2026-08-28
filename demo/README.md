@@ -41,6 +41,25 @@ Spring Boot 3.5 · Java 21 · PostgreSQL · JWT auth
    ./mvnw test
    ```
 
+## Database schema
+
+Flyway owns the schema. Migrations live in `src/main/resources/db/migration` and run
+automatically at startup; Hibernate is set to `validate`, so it checks the entities still
+match what is there and refuses to start if they have drifted — it never alters anything
+itself.
+
+**To change the schema**, add a new numbered file (`V2__add_payments.sql`) alongside the
+entity change in the same commit. Never edit a migration that has already run: Flyway
+records a checksum for each and will refuse to start if one changes underneath it.
+
+A database that predates Flyway is stamped as already being at V1 rather than having V1
+run against it, so switching an existing environment over is safe. A brand-new database
+gets the full V1.
+
+Tests do not run the migrations — H2 builds the schema from the entities instead, since
+the migrations are PostgreSQL-specific. Verify migration changes against a real
+PostgreSQL before deploying.
+
 ## Roles
 
 | Role     | Who                                                              |

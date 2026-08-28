@@ -7,6 +7,13 @@ spring:
     password: ""
     driver-class-name: org.h2.Driver
 
+  # The migrations are PostgreSQL-specific, so tests keep letting Hibernate build
+  # the schema in H2 rather than running them. That keeps tests fast and portable,
+  # at the cost of not exercising the migrations themselves - those are verified
+  # against a real PostgreSQL instead.
+  flyway:
+    enabled: false
+
   jpa:
     hibernate:
       ddl-auto: create-drop
