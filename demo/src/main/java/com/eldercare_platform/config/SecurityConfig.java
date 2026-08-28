@@ -79,8 +79,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         // Native mobile clients do not send an Origin header, so this matters only for
-        // the web dashboard and local tooling. Tighten to real origins before launch.
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8081"));
+        // the web dashboard and local tooling. 8082 is the Expo dev server, which serves
+        // the app's browser preview — without it the preview's preflight is rejected and
+        // every request fails before it is sent. Tighten to real origins before launch.
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://localhost:8081",
+                "http://localhost:8082"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

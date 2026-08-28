@@ -1,14 +1,14 @@
-import * as SecureStore from 'expo-secure-store';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
 import { api, setAuthToken, setUnauthorizedHandler } from '../api/client';
 import type { AuthResponse, LoginRequest, RegisterRequest, UserRole } from '../api/types';
+import { deleteItem, getItem, setItem } from './storage';
 
 /**
- * The JWT goes to Keychain (iOS) / Keystore (Android) via expo-secure-store, not
- * AsyncStorage — AsyncStorage is unencrypted and readable on a rooted device.
- * The token is well under SecureStore's ~2KB practical limit.
+ * On device the JWT goes to Keychain (iOS) / Keystore (Android) rather than
+ * AsyncStorage, which is unencrypted and readable on a rooted device. See
+ * ./storage for the web preview's weaker fallback.
  */
 const TOKEN_KEY = 'eldercare.token';
 const SESSION_KEY = 'eldercare.session';
@@ -38,10 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearSession = useCallback(async () => {
     setAuthToken(null);
     setSession(null);
-    await Promise.all([
-      SecureStore.deleteItemAsync(TOKEN_KEY),
-      SecureStore.deleteItemAsync(SESSION_KEY),
-    ]);
+    await Promise.all([deleteItem(TOKEN_KEY), deleteItem(SESSION_KEY)]);
   }, []);
 
   const persist = useCallback(async (auth: AuthResponse) => {
@@ -54,8 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAuthToken(auth.token);
     setSession(next);
     await Promise.all([
-      SecureStore.setItemAsync(TOKEN_KEY, auth.token),
-      SecureStore.setItemAsync(SESSION_KEY, JSON.stringify(next)),
+      setItem(TOKEN_KEY, auth.token),
+      setItem(SESSION_KEY, JSON.stringify(next)),
     ]);
   }, []);
 
@@ -68,8 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const [token, stored] = await Promise.all([
-          SecureStore.getItemAsync(TOKEN_KEY),
-          SecureStore.getItemAsync(SESSION_KEY),
+          getItem(TOKEN_KEY),
+          getItem(SESSION_KEY),
         ]);
         if (cancelled) return;
         if (token && stored) {
