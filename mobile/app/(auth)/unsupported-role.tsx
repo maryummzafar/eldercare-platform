@@ -4,9 +4,9 @@ import { useAuth } from '../../src/auth/AuthContext';
 import { Body, Button, Notice, Screen, Title } from '../../src/components/ui';
 
 /**
- * Admins authenticate successfully but have nothing to do in the app — vetting
- * runs through the API. Say so plainly rather than dropping them into an empty
- * elder view and letting them conclude the app is broken.
+ * Fallback for a role this build does not know — for example one added on the
+ * server before the app was updated. Say so plainly rather than dropping the user
+ * into an empty view and letting them conclude the app is broken.
  */
 export default function UnsupportedRole() {
   const { session, signOut } = useAuth();
@@ -16,9 +16,9 @@ export default function UnsupportedRole() {
       <Title>Nothing to do here yet</Title>
       <Notice
         tone="info"
-        message={`You are signed in as ${session?.email ?? 'an administrator'}. Admin accounts manage helper verification through the API, not this app.`}
+        message={`You are signed in as ${session?.email ?? 'an unknown account'}, which this version of the app does not support.`}
       />
-      <Body muted>Sign in with an elder or helper account to use the app.</Body>
+      <Body muted>Update the app, or sign in with an elder or helper account.</Body>
       <Button
         label="Sign out"
         variant="secondary"

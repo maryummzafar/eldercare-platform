@@ -21,6 +21,16 @@ export default function RootLayout() {
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="(elder)" options={{ headerShown: false }} />
           <Stack.Screen name="(helper)" options={{ headerShown: false }} />
+          <Stack.Screen name="(admin)" options={{ headerShown: false }} />
+          {/* Public pages: the website's front door and the legal pages Play links to. */}
+          <Stack.Screen name="welcome" options={{ headerShown: false }} />
+          <Stack.Screen name="privacy" options={{ title: 'Privacy policy', headerBackTitle: 'Back' }} />
+          <Stack.Screen name="terms" options={{ title: 'Terms of service', headerBackTitle: 'Back' }} />
+          <Stack.Screen
+            name="delete-account"
+            options={{ title: 'Delete your account', headerBackTitle: 'Back' }}
+          />
+          <Stack.Screen name="account" options={{ title: 'My account', headerBackTitle: 'Back' }} />
           {/* Reachable from both roles, so they live above the role groups. */}
           <Stack.Screen
             name="notifications"

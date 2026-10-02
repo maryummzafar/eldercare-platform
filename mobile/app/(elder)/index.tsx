@@ -92,6 +92,7 @@ export default function FindHelp() {
         helpers.map((helper) => <HelperCard key={helper.helperId} helper={helper} />)
       )}
 
+      <Button label="My account" variant="secondary" onPress={() => router.push('/account')} />
       <Button label="Sign out" variant="secondary" onPress={signOut} />
     </Screen>
   );

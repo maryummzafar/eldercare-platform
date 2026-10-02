@@ -1,9 +1,11 @@
 import Constants from 'expo-constants';
 
 import type {
+  AdminHelperResponse,
   AuthResponse,
   BookingResponse,
   CreateBookingRequest,
+  DeleteAccountRequest,
   HelperProfileRequest,
   HelperResponse,
   LoginRequest,
@@ -29,6 +31,11 @@ const API_PORT = 8081;
  * `extra.apiUrl` in app.json to point at a deployed backend instead.
  */
 function resolveBaseUrl(): string {
+  // Set at build time for release builds (EAS profile / website build). Expo
+  // inlines EXPO_PUBLIC_* variables into the bundle.
+  const fromBuild = process.env.EXPO_PUBLIC_API_URL;
+  if (fromBuild) return fromBuild.replace(/\/+$/, '');
+
   const configured = Constants.expoConfig?.extra?.apiUrl;
   if (typeof configured === 'string' && configured.length > 0) {
     return configured.replace(/\/+$/, '');
@@ -107,7 +114,9 @@ async function request<T>(
     throw new ApiError(0, `Could not reach the server at ${BASE_URL}. Check it is running.`);
   }
 
-  if (response.status === 401) {
+  // Only a request that carried a token can have an expired session. A 401 from
+  // login itself means a wrong password and falls through to the server's message.
+  if (response.status === 401 && authToken) {
     onUnauthorized?.();
     throw new ApiError(401, 'Your session has expired. Please sign in again.');
   }
@@ -207,4 +216,18 @@ export const api = {
 
   markAllNotificationsRead: () =>
     request<void>('/api/notifications/read-all', { method: 'POST' }),
+
+  // Account. Deletion is permanent; the server asks for the password again.
+  deleteAccount: (body: DeleteAccountRequest) =>
+    request<void>('/api/account/delete', { method: 'POST', body }),
+
+  // Admin vetting queue.
+  adminListHelpers: (query: { verified: boolean; page?: number; size?: number }) =>
+    request<Page<AdminHelperResponse>>('/api/admin/helpers', { query }),
+
+  adminSetVerified: (helperUserId: number, verified: boolean) =>
+    request<AdminHelperResponse>(`/api/admin/helpers/${helperUserId}/verification`, {
+      method: 'POST',
+      query: { verified },
+    }),
 };

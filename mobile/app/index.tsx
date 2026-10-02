@@ -1,4 +1,5 @@
 import { Redirect } from 'expo-router';
+import { Platform } from 'react-native';
 
 import { useAuth } from '../src/auth/AuthContext';
 import { Loading, Screen } from '../src/components/ui';
@@ -19,12 +20,15 @@ export default function Index() {
     );
   }
 
-  if (!session) return <Redirect href="/(auth)/login" />;
+  // On the website, a visitor who is not signed in is most likely meeting the
+  // service for the first time, so they get the landing page rather than a login form.
+  if (!session) {
+    return <Redirect href={Platform.OS === 'web' ? '/welcome' : '/(auth)/login'} />;
+  }
 
-  // ADMIN has no mobile surface — verification happens through the API. Sending
-  // an admin to the elder tab would show them an empty, confusing app.
   if (session.role === 'HELPER') return <Redirect href="/(helper)" />;
   if (session.role === 'ELDER') return <Redirect href="/(elder)" />;
+  if (session.role === 'ADMIN') return <Redirect href="/(admin)" />;
 
   return <Redirect href="/(auth)/unsupported-role" />;
 }

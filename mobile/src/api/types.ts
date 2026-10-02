@@ -80,6 +80,24 @@ export interface HelperResponse {
   acceptingBookings: boolean;
 }
 
+/** Mirrors AdminHelperResponse: the vetting view, with contact details. */
+export interface AdminHelperResponse {
+  helperId: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  city: string | null;
+  bio: string | null;
+  hourlyRate: number;
+  offeredServices: ServiceType[];
+  verified: boolean;
+  joinedAt: string;
+}
+
+export interface DeleteAccountRequest {
+  password: string;
+}
+
 export interface HelperProfileRequest {
   bio?: string;
   hourlyRate: number;

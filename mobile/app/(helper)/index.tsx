@@ -188,6 +188,7 @@ export default function HelperVisits() {
 
       <Button label="Refresh" variant="secondary" onPress={load} />
       <Body muted> </Body>
+      <Button label="My account" variant="secondary" onPress={() => router.push('/account')} />
       <Button label="Sign out" variant="secondary" onPress={signOut} />
     </Screen>
   );

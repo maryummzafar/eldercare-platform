@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 
 import { ApiError } from '../../src/api/client';
@@ -9,6 +9,8 @@ import { View } from 'react-native';
 
 export default function Login() {
   const { signIn } = useAuth();
+  // Set by the account screen after a successful deletion.
+  const { deleted } = useLocalSearchParams<{ deleted?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +36,9 @@ export default function Login() {
       <Title>Welcome back</Title>
       <Body muted>Sign in to book help or manage your visits.</Body>
 
+      {deleted === '1' && !error && (
+        <Notice tone="success" message="Your account has been deleted." />
+      )}
       {!!error && <Notice message={error} />}
 
       <Field
@@ -53,6 +58,7 @@ export default function Login() {
           variant="secondary"
           onPress={() => router.push('/(auth)/register')}
         />
+        <Button label="Privacy policy" variant="secondary" onPress={() => router.push('/privacy')} />
       </View>
     </Screen>
   );
