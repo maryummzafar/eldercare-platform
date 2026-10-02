@@ -51,8 +51,21 @@ Threads are keyed by booking id, so `/chat/[bookingId]` is the whole routing sto
 and the server rejects anyone who is not on that booking.
 
 Routing is decided once, in [`app/index.tsx`](app/index.tsx), from the `role` the API
-returns at login. Admins land on an explanatory screen — vetting happens through the
-API, not here.
+returns at login. Admins land on the helper-approval queue.
+
+On the web, signed-out visitors land on `/welcome`, the public front page. The legal
+pages (`/privacy`, `/terms`, `/delete-account`) need no sign-in, since Google Play links
+to them; their business details live in [`src/site.ts`](src/site.ts).
+
+## Release builds
+
+```sh
+npx eas build --platform android --profile production   # .aab for Google Play
+npx eas build --platform android --profile preview      # installable .apk for testers
+```
+
+Set the real API address in `eas.json` (`EXPO_PUBLIC_API_URL`) first. The website is
+built with `npx expo export --platform web` (see `../render.yaml`).
 
 ## Design constraints
 

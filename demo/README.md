@@ -138,11 +138,39 @@ push sender would be added.
 Written automatically on every booking transition (to whichever party did not cause
 it) and on every incoming chat message.
 
+### Account
+
+| Method | Path                  | Body     | Effect                                         |
+|--------|-----------------------|----------|------------------------------------------------|
+| POST   | `/api/account/delete` | password | 204. Permanently deletes the caller's account. |
+
+Required by Google Play. The user row is anonymised rather than removed, because
+bookings involve two people: name, email, phone, address, password and message text
+are erased, notifications and the helper profile are deleted, open bookings are
+cancelled (the other side is notified), and past bookings stay without the departed
+user's details. Refused with 409 while a visit is in progress, and for admins.
+
 ### Admin
 
 | Method | Path                                            | Effect                          |
 |--------|-------------------------------------------------|---------------------------------|
-| POST   | `/api/admin/helpers/{userId}/verification?verified=true` | Vets a helper. |
+| GET    | `/api/admin/helpers?verified=false`             | The vetting queue, oldest first, with contact details. `verified=true` lists approved helpers. |
+| POST   | `/api/admin/helpers/{userId}/verification?verified=true` | Vets a helper (`false` revokes). |
+
+## Limits and errors
+
+- `/api/auth/**` allows `AUTH_RATE_LIMIT_PER_MINUTE` (default 10) attempts per client
+  address per minute, then answers 429 with `Retry-After`.
+- Every error, including bad JSON and unexpected failures, comes back in the same JSON
+  shape with its real status. 401 means only "not signed in / token expired", which the
+  app relies on to decide when to log the user out.
+
+## Deploying
+
+`Dockerfile` builds a production image that listens on `$PORT`. `../render.yaml`
+describes the API, its database and the website for Render; any container host works
+with the same environment variables. In production also set `CORS_ALLOWED_ORIGINS` to
+the website's address and `JPA_SHOW_SQL=false`.
 
 ## Billing rules
 
@@ -164,11 +192,11 @@ it) and on every incoming chat message.
 - **Overlaps are rejected twice** — when the elder books, and again when the helper
   accepts, since a competing request may have been accepted in between.
 
-## Known gaps before launch
+## Known gaps
 
-- `ddl-auto: update` must become `validate` with Flyway migrations. An entity rename
-  under `update` silently drops a column.
-- No payment integration yet — `finalTotal` is computed but nothing charges a card.
+- No payment integration yet — `finalTotal` is computed and the elder pays the helper
+  directly.
 - No ratings endpoint; `averageRating` exists on the profile but nothing writes it.
 - No refresh tokens: a 24-hour token expires and the user logs in again.
-- No rate limiting on `/api/auth/**`.
+- The auth rate limit is held in memory, so it is per instance. Move it to a shared
+  store before running more than one.

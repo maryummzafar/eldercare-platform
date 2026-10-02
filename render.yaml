@@ -1,0 +1,66 @@
+# Render Blueprint: the API, its database and the website in one place.
+# In the Render dashboard: New → Blueprint → pick this repository. Values marked
+# `sync: false` are asked for once during setup and never stored in git.
+#
+# Plans: the free web plan sleeps when idle (first request then takes ~1 minute)
+# and free databases are deleted after 30 days, so both use small paid plans.
+# Check current names and prices on render.com/pricing before applying.
+
+databases:
+  - name: eldercare-db
+    databaseName: eldercare
+    user: eldercare
+    plan: basic-256mb
+    region: singapore
+
+services:
+  # --- API -------------------------------------------------------------------
+  - type: web
+    name: eldercare-api
+    runtime: docker
+    rootDir: demo
+    dockerfilePath: ./Dockerfile
+    plan: starter
+    region: singapore
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_HOST
+        fromDatabase: { name: eldercare-db, property: host }
+      - key: DB_PORT
+        fromDatabase: { name: eldercare-db, property: port }
+      - key: DB_NAME
+        fromDatabase: { name: eldercare-db, property: database }
+      - key: DB_USERNAME
+        fromDatabase: { name: eldercare-db, property: user }
+      - key: DB_PASSWORD
+        fromDatabase: { name: eldercare-db, property: password }
+      # 256 random bits, base64. Changing it later signs everyone out once.
+      - key: JWT_SECRET
+        generateValue: true
+      # The first admin account, created on first start.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      # The website's address, e.g. https://eldercare.example.com
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: JPA_SHOW_SQL
+        value: "false"
+
+  # --- Website (the same app, built for the browser) --------------------------
+  - type: web
+    name: eldercare-web
+    runtime: static
+    rootDir: mobile
+    buildCommand: npm ci && npx expo export --platform web
+    staticPublishPath: dist
+    # The app routes in the browser, so every path serves the same page.
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      # The API's public address, e.g. https://api.example.com
+      - key: EXPO_PUBLIC_API_URL
+        sync: false
