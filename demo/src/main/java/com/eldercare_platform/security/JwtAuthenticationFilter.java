@@ -10,6 +10,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -53,9 +54,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
-        } catch (JwtException | IllegalArgumentException ex) {
-            // Malformed, expired or tampered token: leave the context unauthenticated and
-            // let the entry point return 401 rather than bubbling a 500 out of the filter.
+        } catch (JwtException | IllegalArgumentException | UsernameNotFoundException ex) {
+            // Malformed, expired or tampered token, or one for an account that has since
+            // been deleted: leave the context unauthenticated and let the entry point
+            // return 401 rather than bubbling a 500 out of the filter.
             SecurityContextHolder.clearContext();
         }
 

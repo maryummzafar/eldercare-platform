@@ -4,6 +4,7 @@ import com.eldercare_platform.enums.UserRole;
 import com.eldercare_platform.security.JwtAuthenticationFilter;
 import com.eldercare_platform.security.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,6 +30,9 @@ public class SecurityConfig {
     private final AuthenticationProvider authenticationProvider;
     private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
+    @Value("${app.cors.allowed-origins}")
+    private List<String> allowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
@@ -41,6 +45,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/actuator/health").permitAll()
+                        // Anything the controllers do not handle is forwarded here. Securing it
+                        // turned every unhandled 400/500 into a 401, which the app reads as
+                        // "session expired" and logs the user out mid-save.
+                        .requestMatchers("/error").permitAll()
                         // Browsing helpers is open to any signed-in user.
                         .requestMatchers(HttpMethod.GET, "/api/helpers/**").authenticated()
                         // Only a helper may edit their own profile.
@@ -81,11 +89,9 @@ public class SecurityConfig {
         // Native mobile clients do not send an Origin header, so this matters only for
         // the web dashboard and local tooling. 8082 is the Expo dev server, which serves
         // the app's browser preview — without it the preview's preflight is rejected and
-        // every request fails before it is sent. Tighten to real origins before launch.
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "http://localhost:8081",
-                "http://localhost:8082"));
+        // every request fails before it is sent. In production CORS_ALLOWED_ORIGINS is set
+        // to the deployed website's origin(s) only.
+        config.setAllowedOrigins(allowedOrigins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

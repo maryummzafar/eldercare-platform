@@ -1,6 +1,8 @@
 package com.eldercare_platform.repository;
 
 import com.eldercare_platform.entity.HelperProfile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -19,6 +21,15 @@ public interface HelperProfileRepository
         extends JpaRepository<HelperProfile, Long>, JpaSpecificationExecutor<HelperProfile> {
 
     Optional<HelperProfile> findByUserId(Long userId);
+
+    /**
+     * The admin vetting queue. Oldest first, so nobody waits behind newer signups.
+     *
+     * <p>No {@code @EntityGraph} here: a fetch graph turns every attribute it does not
+     * list lazy, including the otherwise-eager {@code offeredServices}, which then fails
+     * to load once the transaction has closed.
+     */
+    Page<HelperProfile> findByVerifiedOrderByIdAsc(boolean verified, Pageable pageable);
 
     boolean existsByUserId(Long userId);
 }

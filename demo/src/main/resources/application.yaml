@@ -3,7 +3,9 @@ spring:
     name: eldercare
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/eldercare}
+    # Either a full DB_URL, or the parts separately - hosting platforms hand out
+    # host/port/name/user/password, not a JDBC URL.
+    url: ${DB_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:eldercare}}
     username: ${DB_USERNAME:postgres}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -51,8 +53,21 @@ app:
     # 24 hours.
     expiration-ms: ${JWT_EXPIRATION_MS:86400000}
 
+  cors:
+    # Comma-separated. Only browsers send an Origin, so this governs the website alone;
+    # the Android app is unaffected. In production: https://app.yourdomain.com
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081,http://localhost:8082}
+
+  rate-limit:
+    # Login + signup attempts per client address per minute.
+    auth-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:10}
+
 server:
-  port: ${SERVER_PORT:8081}
+  port: ${PORT:${SERVER_PORT:8081}}
+  # Hosting platforms terminate HTTPS at a proxy and pass the client address in
+  # X-Forwarded-For. "native" lets Tomcat trust that header only from a private-network
+  # hop, so the login rate limit sees the real client and cannot be spoofed around.
+  forward-headers-strategy: native
 
 logging:
   level:

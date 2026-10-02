@@ -27,3 +27,7 @@ app:
   jwt:
     secret: 0DfwmpOCRtOGXPEzD0h5oyLDMGkNDd35Jm0CzJfAcrosgoES6o6VUhWtTh63ec3H
     expiration-ms: 3600000
+
+  # Every test signs up and logs in from the same address within seconds.
+  rate-limit:
+    auth-per-minute: 100000

@@ -1,5 +1,6 @@
 package com.eldercare_platform.service;
 
+import com.eldercare_platform.dto.AdminHelperResponse;
 import com.eldercare_platform.dto.HelperProfileRequest;
 import com.eldercare_platform.dto.HelperResponse;
 import com.eldercare_platform.entity.HelperProfile;
@@ -100,12 +101,19 @@ public class HelperService {
         return HelperResponse.from(profile);
     }
 
+    /** Admin-only: helpers filtered by verification state, with contact details for vetting. */
+    @Transactional(readOnly = true)
+    public Page<AdminHelperResponse> listForAdmin(boolean verified, Pageable pageable) {
+        return helperProfileRepository.findByVerifiedOrderByIdAsc(verified, pageable)
+                .map(AdminHelperResponse::from);
+    }
+
     /** Admin-only: marks a helper as vetted, making them visible in search. */
     @Transactional
-    public HelperResponse setVerified(Long helperUserId, boolean verified) {
+    public AdminHelperResponse setVerified(Long helperUserId, boolean verified) {
         HelperProfile profile = helperProfileRepository.findByUserId(helperUserId)
                 .orElseThrow(() -> ApiException.notFound("Helper not found"));
         profile.setVerified(verified);
-        return HelperResponse.from(profile);
+        return AdminHelperResponse.from(profile);
     }
 }

@@ -26,6 +26,7 @@ public class RegisterRequest {
     @Pattern(regexp = "^$|^\\+?[0-9 \\-]{7,20}$", message = "Must be a valid phone number")
     private String phone;
 
+    @Size(max = 255, message = "Address must be at most 255 characters")
     private String address;
 
     @NotNull(message = "Role is required")

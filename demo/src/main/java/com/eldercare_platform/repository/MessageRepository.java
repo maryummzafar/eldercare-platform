@@ -18,6 +18,14 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
      * Called when a participant opens the thread, so it must not fan out into a
      * select-then-save per message.
      */
+    /**
+     * On account deletion: blanks what this user wrote while keeping the rows, so the
+     * other participant's thread still reads in order instead of losing half of it.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Message m SET m.body = :replacement WHERE m.sender.id = :senderId")
+    int redactBySender(@Param("senderId") Long senderId, @Param("replacement") String replacement);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             UPDATE Message m

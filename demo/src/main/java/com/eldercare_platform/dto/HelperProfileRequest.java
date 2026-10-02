@@ -22,6 +22,7 @@ public class HelperProfileRequest {
     @DecimalMax(value = "10000.00", message = "Hourly rate is unrealistically high")
     private BigDecimal hourlyRate;
 
+    @Size(max = 100, message = "City must be at most 100 characters")
     private String city;
 
     @NotEmpty(message = "Select at least one service you offer")
