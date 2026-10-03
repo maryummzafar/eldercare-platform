@@ -11,7 +11,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.eldercareapp.android",
+      "package": "com.eldercare.android",
       "adaptiveIcon": {
         "backgroundColor": "#0B5FA5",
         "foregroundImage": "./assets/android-icon-foreground.png",
