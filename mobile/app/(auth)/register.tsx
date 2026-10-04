@@ -5,7 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ApiError } from '../../src/api/client';
 import type { UserRole } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
-import { Button, Card, Field, Icon, Notice, Screen } from '../../src/components/ui';
+import { Button, Card, Checkbox, Field, Icon, Notice, Screen } from '../../src/components/ui';
 import type { IconName } from '../../src/components/ui';
 import { colors, fonts, radius, spacing, type } from '../../src/theme';
 
@@ -21,6 +21,8 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [confirmedAdult, setConfirmedAdult] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
@@ -39,6 +41,8 @@ export default function Register() {
         // send undefined rather than "" when the user skipped it.
         phone: phone.trim() || undefined,
         address: address.trim() || undefined,
+        acceptedTerms,
+        confirmedAdult,
       });
       // The signup emailed a code; confirming it is the natural next step.
       router.replace('/verify-email');
@@ -59,18 +63,12 @@ export default function Register() {
       footer={
         <>
           {!!error && <Notice message={error} />}
-          <Button label="Create account" onPress={submit} busy={busy} disabled={!name || !email || !password} />
-          <Text style={styles.legal}>
-            By creating an account you agree to our{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/terms')}>
-              Terms
-            </Text>{' '}
-            and{' '}
-            <Text style={styles.legalLink} onPress={() => router.push('/privacy')}>
-              Privacy policy
-            </Text>
-            .
-          </Text>
+          <Button
+            label="Create account"
+            onPress={submit}
+            busy={busy}
+            disabled={!name || !email || !password || !acceptedTerms || !confirmedAdult}
+          />
         </>
       }>
       <View style={styles.heading}>
@@ -149,6 +147,32 @@ export default function Register() {
         />
       </Card>
 
+      {/* Consent is an active choice here, never pre-ticked, as the DPDP Act expects. */}
+      <Card style={styles.form}>
+        <Checkbox
+          checked={acceptedTerms}
+          onChange={setAcceptedTerms}
+          accessibilityLabel="I agree to the Privacy Policy and Terms of Service"
+          error={fieldErrors.acceptedTerms}>
+          I agree to the{' '}
+          <Text style={styles.legalLink} onPress={() => router.push('/privacy')}>
+            Privacy Policy
+          </Text>{' '}
+          and{' '}
+          <Text style={styles.legalLink} onPress={() => router.push('/terms')}>
+            Terms of Service
+          </Text>
+          , including how my details are shared with the people I book with.
+        </Checkbox>
+        <Checkbox
+          checked={confirmedAdult}
+          onChange={setConfirmedAdult}
+          accessibilityLabel="I am 18 years old or older"
+          error={fieldErrors.confirmedAdult}>
+          I am 18 years old or older.
+        </Checkbox>
+      </Card>
+
       <View style={styles.switch}>
         <Text style={styles.switchText}>Already have an account?</Text>
         <Pressable accessibilityRole="button" onPress={() => router.replace('/login')} style={styles.link}>
@@ -223,6 +247,5 @@ const styles = StyleSheet.create({
   switchText: { ...type.body, color: colors.textMuted },
   link: { minHeight: 48, justifyContent: 'center' },
   linkText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.primary },
-  legal: { ...type.small, fontFamily: fonts.regular, color: colors.textMuted, textAlign: 'center' },
-  legalLink: { fontFamily: fonts.semibold, color: colors.primary },
+  legalLink: { fontFamily: fonts.semibold, color: colors.primary, textDecorationLine: 'underline' },
 });

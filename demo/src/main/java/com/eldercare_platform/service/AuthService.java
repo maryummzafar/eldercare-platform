@@ -11,8 +11,8 @@ import com.eldercare_platform.exception.ApiException;
 import com.eldercare_platform.repository.UserRepository;
 import com.eldercare_platform.security.AuthenticatedUser;
 import com.eldercare_platform.security.JwtService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -25,7 +25,6 @@ import java.util.Locale;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -33,6 +32,22 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
     private final VerificationCodeService verificationCodeService;
+    private final String termsVersion;
+
+    public AuthService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            AuthenticationManager authenticationManager,
+            VerificationCodeService verificationCodeService,
+            @Value("${app.legal.terms-version}") String termsVersion) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
+        this.authenticationManager = authenticationManager;
+        this.verificationCodeService = verificationCodeService;
+        this.termsVersion = termsVersion;
+    }
 
     /**
      * Not one transaction on purpose: the account is committed first, and the
@@ -59,6 +74,9 @@ public class AuthService {
                 .address(request.getAddress())
                 .role(request.getRole())
                 .enabled(true)
+                // Validation has already refused a signup without both confirmations.
+                .termsAcceptedAt(Instant.now())
+                .termsVersion(termsVersion)
                 .build());
 
         try {

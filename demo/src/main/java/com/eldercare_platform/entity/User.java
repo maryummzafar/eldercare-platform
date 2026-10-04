@@ -56,6 +56,13 @@ public class User {
      */
     private Instant credentialsChangedAt;
 
+    /** When the user agreed to the Privacy Policy and Terms at signup. */
+    private Instant termsAcceptedAt;
+
+    /** Which version they agreed to; see {@code app.legal.terms-version}. */
+    @Column(length = 32)
+    private String termsVersion;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

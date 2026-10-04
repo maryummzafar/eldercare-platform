@@ -70,6 +70,11 @@ app:
     # Defaults to the username when empty.
     from: ${MAIL_FROM:}
 
+  legal:
+    # Stored with each signup's consent. Change it (to the policy's new date) whenever
+    # the Privacy Policy or Terms change, in the same commit as mobile/src/site.ts.
+    terms-version: "2026-10-05"
+
   rate-limit:
     # Login + signup attempts per client address per minute.
     auth-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:10}

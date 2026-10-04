@@ -158,7 +158,8 @@ class LaunchReadinessIntegrationTest {
         String body = mvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Map.of(
-                                "name", name, "email", email, "password", PASSWORD, "role", role))))
+                                "name", name, "email", email, "password", PASSWORD, "role", role,
+                                "acceptedTerms", true, "confirmedAdult", true))))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         var node = json.readTree(body);

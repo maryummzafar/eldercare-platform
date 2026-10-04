@@ -48,7 +48,14 @@ export default function PrivacyPolicy() {
           heading: 'How long we keep it',
           paragraphs: [
             'We keep your information while your account is open. When you delete your account, we erase your name, email, phone number, address, password and the text of your messages straight away, and remove your notifications and helper profile.',
-            'Records of bookings that took place are kept without your details, so that the other person keeps their history of visits and we can deal with disputes and meet legal and tax obligations. Backups containing deleted data are overwritten within 30 days.',
+            'Records of bookings that took place are kept without your details, so that the other person keeps their history of visits and we can deal with disputes and meet legal and tax obligations. Copies held in our database backups are removed as those backups are routinely replaced, and are never used to restore a deleted account.',
+          ],
+        },
+        {
+          heading: 'Your consent',
+          paragraphs: [
+            'When you create an account, you agree to this policy by ticking a box, and we record when you did and which version you agreed to. We use your information only for the purposes described here.',
+            'You can withdraw your consent at any time by deleting your account. That stops all further use of your information, as described above.',
           ],
         },
         {
@@ -56,7 +63,14 @@ export default function PrivacyPolicy() {
           paragraphs: [
             `Helpers can change their profile in the app at any time. To correct your name, phone number or address, email ${SITE.supportEmail} and we will update it.`,
             'You can delete your account at any time from My account → Delete my account. If you cannot sign in, email us and we will delete it for you.',
-            `You can ask us for a copy of your information, or ask questions or complain about how we handle it, by emailing ${SITE.supportEmail}. We reply within 30 days.`,
+            `You can ask us for a summary of the information we hold about you and who it has been shared with, ask us to correct or erase it, or nominate someone to exercise these rights for you if you die or become unable to. Email ${SITE.supportEmail}.`,
+          ],
+        },
+        {
+          heading: 'Grievance Officer',
+          paragraphs: [
+            `If you have a complaint about how we handle your information, or about anything on ${SITE.appName}, contact our Grievance Officer: ${SITE.grievanceOfficer}, ${SITE.supportEmail}. We acknowledge complaints within 24 hours and aim to resolve them within 15 days.`,
+            "If you are not satisfied with our answer, you may complain to the Data Protection Board of India.",
           ],
         },
         {

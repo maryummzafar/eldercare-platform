@@ -468,6 +468,39 @@ const BADGE_TONES = {
 
 export type BadgeTone = keyof typeof BADGE_TONES;
 
+/**
+ * A tick box with its label beside it; the whole row is the tap target. `children`
+ * may contain links, which take their own taps.
+ */
+export function Checkbox({ checked, onChange, children, accessibilityLabel, error }: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  children: ReactNode;
+  accessibilityLabel: string;
+  error?: string;
+}) {
+  return (
+    <View style={styles.checkboxWrap}>
+      <Pressable
+        onPress={() => onChange(!checked)}
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked }}
+        accessibilityLabel={accessibilityLabel}
+        style={styles.checkboxRow}>
+        <View style={[styles.checkbox, checked && styles.checkboxChecked, !!error && styles.inputError]}>
+          {checked && <Icon name="checkmark" size={20} color={colors.onPrimary} />}
+        </View>
+        <Text style={styles.checkboxLabel}>{children}</Text>
+      </Pressable>
+      {!!error && (
+        <Text accessibilityLiveRegion="polite" style={styles.fieldError}>
+          {error}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 /** A small status label. The text carries the meaning; colour only reinforces it. */
 export function Badge({ label, tone = 'neutral', icon }: {
   label: string;
@@ -682,6 +715,23 @@ const styles = StyleSheet.create({
   chipPressed: { backgroundColor: colors.surface },
   chipText: { ...type.label, color: colors.text },
   chipTextSelected: { color: colors.onPrimary, fontFamily: fonts.semibold },
+
+  checkboxWrap: { gap: 4 },
+  checkboxRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, minHeight: TOUCH_TARGET, paddingVertical: 2 },
+  checkbox: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  // Checked is a filled box AND a tick, not colour alone.
+  checkboxChecked: { backgroundColor: colors.primary, borderColor: colors.primary },
+  checkboxLabel: { ...type.body, color: colors.text, flex: 1 },
 
   badge: {
     flexDirection: 'row',

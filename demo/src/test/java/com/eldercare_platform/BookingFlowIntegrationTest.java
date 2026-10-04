@@ -194,7 +194,9 @@ class BookingFlowIntegrationTest {
                                 "name", "Impostor",
                                 "email", "dupe@test.local",
                                 "password", "another-password",
-                                "role", "ELDER"))))
+                                "role", "ELDER",
+                                "acceptedTerms", true,
+                                "confirmedAdult", true))))
                 .andExpect(status().isConflict());
 
         mvc.perform(post("/api/auth/register")
@@ -203,8 +205,11 @@ class BookingFlowIntegrationTest {
                                 "name", "Sneaky",
                                 "email", "sneaky@test.local",
                                 "password", "password123",
-                                "role", "ADMIN"))))
-                .andExpect(status().isBadRequest());
+                                "role", "ADMIN",
+                                "acceptedTerms", true,
+                                "confirmedAdult", true))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Cannot self-register as an administrator"));
     }
 
     @Test
@@ -230,7 +235,9 @@ class BookingFlowIntegrationTest {
                                 "name", name,
                                 "email", email,
                                 "password", "correct-horse-battery",
-                                "role", role))))
+                                "role", role,
+                                "acceptedTerms", true,
+                                "confirmedAdult", true))))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 

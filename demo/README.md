@@ -76,13 +76,16 @@ All endpoints except `/api/auth/**` require `Authorization: Bearer <token>`.
 
 | Method | Path                 | Body                                        | Returns                      |
 |--------|----------------------|---------------------------------------------|------------------------------|
-| POST   | `/api/auth/register` | name, email, password, role, phone?, address? | 201 + token & profile      |
+| POST   | `/api/auth/register` | name, email, password, role, acceptedTerms, confirmedAdult, phone?, address? | 201 + token & profile |
 | POST   | `/api/auth/login`    | email, password                             | 200 + token & profile        |
 
 | POST   | `/api/auth/password/forgot` | email                                  | 202 always, whether or not the email has an account |
 | POST   | `/api/auth/password/reset`  | email, code, newPassword               | 200 + token & profile        |
 
 `role` must be `ELDER` or `HELPER`. Passwords are 8–72 characters, BCrypt-hashed.
+`acceptedTerms` and `confirmedAdult` must both be `true`; the time of consent and
+`app.legal.terms-version` are stored on the user as evidence of what they agreed to.
+Bump that version whenever the Privacy Policy or Terms change.
 
 ### Email codes
 

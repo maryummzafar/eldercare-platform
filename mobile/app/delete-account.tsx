@@ -35,7 +35,7 @@ export default function DeleteAccountInfo() {
         {
           heading: 'What is kept',
           paragraphs: [
-            'Records of past bookings — the date, type of help and amount — are kept without your name or contact details, so the other person keeps their history of visits and we can meet legal and tax obligations. Backups containing deleted data are overwritten within 30 days.',
+            'Records of past bookings — the date, type of help and amount — are kept without your name or contact details, so the other person keeps their history of visits and we can meet legal and tax obligations. Copies held in our database backups are removed as those backups are routinely replaced.',
           ],
         },
       ]}

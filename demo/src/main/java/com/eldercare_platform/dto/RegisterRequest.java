@@ -1,6 +1,7 @@
 package com.eldercare_platform.dto;
 
 import com.eldercare_platform.enums.UserRole;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -31,4 +32,12 @@ public class RegisterRequest {
 
     @NotNull(message = "Role is required")
     private UserRole role;
+
+    /** Active consent to the Privacy Policy and Terms, as the DPDP Act expects. */
+    @AssertTrue(message = "Please agree to the Privacy Policy and Terms to continue")
+    private boolean acceptedTerms;
+
+    /** The service is for adults only, on both sides. */
+    @AssertTrue(message = "You must be 18 or older to use Eldercare")
+    private boolean confirmedAdult;
 }

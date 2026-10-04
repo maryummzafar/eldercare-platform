@@ -78,6 +78,10 @@ export interface RegisterRequest {
   role: Extract<UserRole, 'ELDER' | 'HELPER'>;
   phone?: string;
   address?: string;
+  /** Active consent to the Privacy Policy and Terms. The server refuses false. */
+  acceptedTerms: boolean;
+  /** Confirms the person is 18 or older. The server refuses false. */
+  confirmedAdult: boolean;
 }
 
 export interface LoginRequest {

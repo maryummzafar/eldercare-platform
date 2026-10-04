@@ -142,14 +142,38 @@ class EmailAndPasswordIntegrationTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void signupNeedsConsentAndAnAdult() throws Exception {
+        var base = Map.of("name", "Cara Consent", "email", "cara@test.local", "password", PASSWORD, "role", "ELDER");
+
+        mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(withFlags(base, false, true))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.acceptedTerms").exists());
+        mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(withFlags(base, true, false))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.confirmedAdult").exists());
+        // Nothing was created by either refusal.
+        assertThat(inbox.countTo("cara@test.local")).isZero();
+    }
+
     // --- helpers ------------------------------------------------------------------
+
+    private static Map<String, Object> withFlags(Map<String, String> base, boolean terms, boolean adult) {
+        Map<String, Object> body = new java.util.HashMap<>(base);
+        body.put("acceptedTerms", terms);
+        body.put("confirmedAdult", adult);
+        return body;
+    }
 
     private record Account(String token, long id, String email) {}
 
     private Account register(String name, String email, String role) throws Exception {
         String body = mvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content(json.writeValueAsString(Map.of(
-                                "name", name, "email", email, "password", PASSWORD, "role", role))))
+                                "name", name, "email", email, "password", PASSWORD, "role", role,
+                                "acceptedTerms", true, "confirmedAdult", true))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.emailVerified").value(false))
                 .andReturn().getResponse().getContentAsString();
