@@ -1,15 +1,18 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { SERVICE_LABELS, STATUS_LABELS } from '../api/types';
-import type { BookingResponse, BookingStatus } from '../api/types';
+import type { BookingResponse } from '../api/types';
 import { formatMoney, formatTimeRange } from '../format';
-import { colors, radius, spacing, type } from '../theme';
-import { Body, Button, Card, Heading } from './ui';
+import { SERVICE_ICONS, STATUS_TONES } from '../presentation';
+import { colors, fonts, radius, spacing, type } from '../theme';
+import { Avatar, Badge, Button, Card, DetailRow, Icon } from './ui';
+import type { IconName } from './ui';
 
 export interface BookingAction {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  icon?: IconName;
 }
 
 /**
@@ -19,38 +22,55 @@ export interface BookingAction {
  */
 export function BookingCard({
   booking,
-  counterpartyLabel,
   counterpartyName,
   actions,
   busy = false,
 }: {
   booking: BookingResponse;
-  counterpartyLabel: string;
   counterpartyName: string;
   actions?: BookingAction[];
   busy?: boolean;
 }) {
+  const status = STATUS_TONES[booking.status];
+  // Once complete, the final charge replaces the estimate — showing both invites
+  // the question of which one was actually billed.
+  const amount = booking.finalTotal ?? booking.estimatedTotal;
+  const amountLabel = booking.finalTotal != null ? 'Total' : 'Estimate';
+
   return (
     <Card>
-      <View style={styles.header}>
-        <Heading>{SERVICE_LABELS[booking.serviceType]}</Heading>
-        <StatusBadge status={booking.status} />
+      <View style={styles.top}>
+        <View style={styles.serviceIcon}>
+          <Icon name={SERVICE_ICONS[booking.serviceType]} size={22} color={colors.primary} />
+        </View>
+        <View style={styles.titleBlock}>
+          <Text style={styles.service}>{SERVICE_LABELS[booking.serviceType]}</Text>
+          <Badge label={STATUS_LABELS[booking.status]} tone={status.tone} icon={status.icon} />
+        </View>
       </View>
 
-      <Body>{formatTimeRange(booking.scheduledStart, booking.scheduledEnd)}</Body>
-      <Text style={styles.detail}>
-        {counterpartyLabel}: {counterpartyName}
-      </Text>
-      {!!booking.serviceAddress && <Text style={styles.detail}>{booking.serviceAddress}</Text>}
-      {!!booking.notes && <Text style={styles.detail}>“{booking.notes}”</Text>}
+      <View style={styles.details}>
+        <DetailRow icon="calendar-outline">
+          {formatTimeRange(booking.scheduledStart, booking.scheduledEnd)}
+        </DetailRow>
+        {!!booking.serviceAddress && <DetailRow icon="location-outline">{booking.serviceAddress}</DetailRow>}
+        {!!booking.notes && <DetailRow icon="document-text-outline">{booking.notes}</DetailRow>}
+      </View>
 
-      {/* Once complete, the final charge replaces the estimate — showing both
-          invites the question of which one was actually billed. */}
-      {booking.finalTotal != null ? (
-        <Text style={styles.total}>Charged {formatMoney(booking.finalTotal)}</Text>
-      ) : booking.estimatedTotal != null ? (
-        <Text style={styles.estimate}>Estimated {formatMoney(booking.estimatedTotal)}</Text>
-      ) : null}
+      <View style={styles.footer}>
+        <View style={styles.person}>
+          <Avatar name={counterpartyName} size={36} />
+          <Text style={styles.personName} numberOfLines={1}>
+            {counterpartyName}
+          </Text>
+        </View>
+        {amount != null && (
+          <View style={styles.amount}>
+            <Text style={styles.amountLabel}>{amountLabel}</Text>
+            <Text style={styles.amountValue}>{formatMoney(amount)}</Text>
+          </View>
+        )}
+      </View>
 
       {!!actions?.length && (
         <View style={styles.actions}>
@@ -60,6 +80,7 @@ export function BookingCard({
                 label={action.label}
                 onPress={action.onPress}
                 variant={action.variant ?? 'primary'}
+                icon={action.icon}
                 busy={busy}
               />
             </View>
@@ -70,37 +91,33 @@ export function BookingCard({
   );
 }
 
-function StatusBadge({ status }: { status: BookingStatus }) {
-  return (
-    <View style={[styles.badge, badgeTone(status)]}>
-      {/* The label carries the meaning; colour only reinforces it. */}
-      <Text style={styles.badgeText}>{STATUS_LABELS[status]}</Text>
-    </View>
-  );
-}
-
-function badgeTone(status: BookingStatus) {
-  switch (status) {
-    case 'ACCEPTED':
-    case 'IN_PROGRESS':
-      return { backgroundColor: colors.success };
-    case 'REJECTED':
-    case 'CANCELLED':
-      return { backgroundColor: colors.danger };
-    case 'COMPLETED':
-      return { backgroundColor: colors.primary };
-    default:
-      return { backgroundColor: colors.warning };
-  }
-}
-
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: spacing.sm },
-  detail: { ...type.caption, color: colors.textMuted },
-  estimate: { ...type.bodyStrong, color: colors.text },
-  total: { ...type.bodyStrong, color: colors.primary },
-  badge: { paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, borderRadius: radius.sm },
-  badgeText: { ...type.caption, color: colors.onPrimary, fontWeight: '600' },
-  actions: { gap: spacing.sm, marginTop: spacing.sm },
-  action: { flexGrow: 1 },
+  top: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+  serviceIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleBlock: { flex: 1, gap: 6 },
+  service: { ...type.heading, color: colors.text },
+  details: { gap: 6 },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingTop: spacing.sm + 2,
+    borderTopWidth: 1,
+    borderTopColor: colors.surface,
+  },
+  person: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
+  personName: { ...type.bodyStrong, color: colors.text, flexShrink: 1 },
+  amount: { alignItems: 'flex-end' },
+  amountLabel: { ...type.small, color: colors.textMuted },
+  amountValue: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 24, color: colors.text },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  action: { flexGrow: 1, flexBasis: 140 },
 });

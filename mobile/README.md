@@ -86,18 +86,29 @@ ad-hoc styles, so these floors hold as screens get added.
 ## Layout
 
 ```
-app/                 routes (expo-router, file-based)
-  index.tsx          decides where a launch lands, based on role
-  (auth)/            login, register
-  (elder)/           search, helper detail + booking, my bookings
-  (helper)/          visits with lifecycle actions, profile editor
+app/                    routes (expo-router, file-based)
+  index.tsx             decides where a launch lands
+  (auth)/               login, register
+  (signed-in)/          everything behind sign-in; its layout does the check once
+    (tabs)/             Home, Bookings, Inbox, Account — content chosen by role
+    helper/[id].tsx     helper profile + booking
+    chat/[bookingId]    one thread per booking
+    profile.tsx         the helper's profile editor
+  welcome, privacy,     public website pages
+  terms, delete-account
 src/
-  api/               typed client + types mirrored from the Java DTOs
-  auth/              session context; JWT in Keychain/Keystore
-  components/        shared UI that enforces the accessibility floors
-  theme.ts           design tokens
-  format.ts          money and date rendering
+  api/                  typed client + types mirrored from the Java DTOs
+  auth/                 session context; JWT in Keychain/Keystore
+  components/           shared UI that enforces the accessibility floors
+  screens/              the role-specific screens behind the tabs
+  theme.ts              design tokens: colours, Inter type ramp, spacing
+  presentation.ts       icons and badge tones per service, status, notification
+  format.ts             money and date rendering
 ```
+
+Every API call waits until the stored token has been read back at launch
+(`markSessionRestored`). Without that, a screen opened straight from a link calls the
+API before the token is loaded, gets a 401, and signs out a user who was signed in.
 
 `src/api/types.ts` is hand-written to mirror `com.eldercare_platform.dto`. If a DTO
 changes on the backend, change it there in the same commit.

@@ -1,18 +1,21 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '../../src/api/client';
 import type { UserRole } from '../../src/api/types';
 import { useAuth } from '../../src/auth/AuthContext';
-import { Body, Button, Field, Notice, Screen, Title } from '../../src/components/ui';
-import { TOUCH_TARGET, colors, radius, spacing, type } from '../../src/theme';
+import { Button, Card, Field, Icon, Notice, Screen } from '../../src/components/ui';
+import type { IconName } from '../../src/components/ui';
+import { colors, fonts, radius, spacing, type } from '../../src/theme';
 
 type SignupRole = Extract<UserRole, 'ELDER' | 'HELPER'>;
 
 export default function Register() {
   const { signUp } = useAuth();
-  const [role, setRole] = useState<SignupRole>('ELDER');
+  // The website's "Become a helper" button opens this form with the helper option chosen.
+  const params = useLocalSearchParams<{ role?: string }>();
+  const [role, setRole] = useState<SignupRole>(params.role === 'HELPER' ? 'HELPER' : 'ELDER');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -51,84 +54,112 @@ export default function Register() {
   }
 
   return (
-    <Screen>
-      <Title>Create your account</Title>
+    <Screen
+      footer={
+        <>
+          {!!error && <Notice message={error} />}
+          <Button label="Create account" onPress={submit} busy={busy} disabled={!name || !email || !password} />
+          <Text style={styles.legal}>
+            By creating an account you agree to our{' '}
+            <Text style={styles.legalLink} onPress={() => router.push('/terms')}>
+              Terms
+            </Text>{' '}
+            and{' '}
+            <Text style={styles.legalLink} onPress={() => router.push('/privacy')}>
+              Privacy policy
+            </Text>
+            .
+          </Text>
+        </>
+      }>
+      <View style={styles.heading}>
+        <Text accessibilityRole="header" style={styles.title}>
+          Create your account
+        </Text>
+        <Text style={styles.subtitle}>It takes about a minute.</Text>
+      </View>
 
-      <View style={styles.roleGroup} accessibilityRole="radiogroup">
-        <Text style={styles.roleLabel}>I want to</Text>
+      <View style={styles.roles} accessibilityRole="radiogroup">
         <RoleOption
+          icon="heart-outline"
           selected={role === 'ELDER'}
           onPress={() => setRole('ELDER')}
-          heading="Book help"
-          detail="Find a vetted helper for hospital trips, groceries or company."
+          heading="I need help"
+          detail="Book a verified helper for hospital trips, shopping or company."
         />
         <RoleOption
+          icon="hand-left-outline"
           selected={role === 'HELPER'}
           onPress={() => setRole('HELPER')}
-          heading="Offer help"
-          detail="Earn by helping nearby elders. An admin verifies you before you appear in search."
+          heading="I want to help"
+          detail="Earn by helping older adults near you. We check your ID first."
         />
       </View>
 
-      {!!error && <Notice message={error} />}
-
-      <Field
-        label="Full name"
-        value={name}
-        onChangeText={setName}
-        autoCapitalize="words"
-        error={fieldErrors.name}
-      />
-      <Field
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        placeholder="you@example.com"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        error={fieldErrors.email}
-      />
-      <Field
-        label="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        error={fieldErrors.password ?? 'At least 8 characters'}
-      />
-      <Field
-        label="Phone (optional)"
-        value={phone}
-        onChangeText={setPhone}
-        keyboardType="phone-pad"
-        error={fieldErrors.phone}
-      />
-      <Field
-        label={role === 'ELDER' ? 'Home address (optional)' : 'Address (optional)'}
-        value={address}
-        onChangeText={setAddress}
-        multiline
-        error={fieldErrors.address}
-      />
-
-      <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
-        <Button
-          label="Create account"
-          onPress={submit}
-          busy={busy}
-          disabled={!name || !email || !password}
+      <Card style={styles.form}>
+        <Field
+          label="Full name"
+          icon="person-outline"
+          value={name}
+          onChangeText={setName}
+          autoCapitalize="words"
+          autoComplete="name"
+          error={fieldErrors.name}
         />
-        <Button label="I already have an account" variant="secondary" onPress={() => router.back()} />
+        <Field
+          label="Email"
+          icon="mail-outline"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
+          error={fieldErrors.email}
+        />
+        <Field
+          label="Password"
+          icon="lock-closed-outline"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="new-password"
+          error={fieldErrors.password}
+          hint="At least 8 characters"
+        />
+        <Field
+          label="Phone (optional)"
+          icon="call-outline"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+          autoComplete="tel"
+          error={fieldErrors.phone}
+          hint={role === 'HELPER' ? 'We use it to verify you before you can be booked.' : undefined}
+        />
+        <Field
+          label={role === 'ELDER' ? 'Home address (optional)' : 'Address (optional)'}
+          icon="home-outline"
+          value={address}
+          onChangeText={setAddress}
+          error={fieldErrors.address}
+          hint={role === 'ELDER' ? 'Shared only with helpers you book.' : undefined}
+        />
+      </Card>
+
+      <View style={styles.switch}>
+        <Text style={styles.switchText}>Already have an account?</Text>
+        <Pressable accessibilityRole="button" onPress={() => router.replace('/login')} style={styles.link}>
+          <Text style={styles.linkText}>Sign in</Text>
+        </Pressable>
       </View>
     </Screen>
   );
 }
 
-function RoleOption({
-  selected,
-  onPress,
-  heading,
-  detail,
-}: {
+function RoleOption({ icon, selected, onPress, heading, detail }: {
+  icon: IconName;
   selected: boolean;
   onPress: () => void;
   heading: string;
@@ -140,27 +171,57 @@ function RoleOption({
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       accessibilityLabel={`${heading}. ${detail}`}
-      style={[styles.roleOption, selected && styles.roleOptionSelected]}>
-      <Text style={styles.roleHeading}>{heading}</Text>
-      <Text style={styles.roleDetail}>{detail}</Text>
+      style={[styles.role, selected && styles.roleSelected]}>
+      <View style={[styles.roleIcon, selected && styles.roleIconSelected]}>
+        <Icon name={icon} size={24} color={selected ? colors.onPrimary : colors.primary} />
+      </View>
+      <View style={styles.fill}>
+        <Text style={styles.roleHeading}>{heading}</Text>
+        <Text style={styles.roleDetail}>{detail}</Text>
+      </View>
+      {/* Selection is shown by the border, the filled icon AND this tick — not colour alone. */}
+      <Icon
+        name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+        size={26}
+        color={selected ? colors.primary : colors.borderStrong}
+      />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  roleGroup: { gap: spacing.sm },
-  roleLabel: { ...type.label, color: colors.text },
-  roleOption: {
-    minHeight: TOUCH_TARGET,
+  fill: { flex: 1, gap: 2 },
+  heading: { gap: spacing.xs },
+  title: { ...type.title, color: colors.text },
+  subtitle: { ...type.body, color: colors.textMuted },
+  roles: { gap: spacing.sm + 2 },
+  role: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
     padding: spacing.md,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     borderWidth: 2,
     borderColor: colors.border,
-    gap: spacing.xs,
+    backgroundColor: colors.card,
   },
-  // Selection is shown by border weight and a filled background, not colour
-  // alone — colour-blind users get the same signal.
-  roleOptionSelected: { borderColor: colors.primary, backgroundColor: colors.surface },
+  roleSelected: { borderColor: colors.primary, backgroundColor: '#F7FAFE' },
+  roleIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roleIconSelected: { backgroundColor: colors.primary },
   roleHeading: { ...type.bodyStrong, color: colors.text },
   roleDetail: { ...type.caption, color: colors.textMuted },
+  form: { gap: spacing.md, padding: spacing.lg },
+  switch: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  switchText: { ...type.body, color: colors.textMuted },
+  link: { minHeight: 48, justifyContent: 'center' },
+  linkText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.primary },
+  legal: { ...type.small, fontFamily: fonts.regular, color: colors.textMuted, textAlign: 'center' },
+  legalLink: { fontFamily: fonts.semibold, color: colors.primary },
 });

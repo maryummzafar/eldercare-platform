@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { api, setAuthToken, setUnauthorizedHandler } from '../api/client';
+import { api, markSessionRestored, setAuthToken, setUnauthorizedHandler } from '../api/client';
 import type { AuthResponse, LoginRequest, RegisterRequest, UserRole } from '../api/types';
 import { deleteItem, getItem, setItem } from './storage';
 
@@ -78,6 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // treat it as signed out.
         if (!cancelled) await clearSession();
       } finally {
+        // Unblocks API calls queued while the token was being read.
+        markSessionRestored();
         if (!cancelled) setLoading(false);
       }
     })();

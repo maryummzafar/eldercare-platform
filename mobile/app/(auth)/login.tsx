@@ -1,11 +1,12 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError } from '../../src/api/client';
 import { useAuth } from '../../src/auth/AuthContext';
-import { Body, Button, Field, Notice, Screen, Title } from '../../src/components/ui';
-import { spacing } from '../../src/theme';
-import { View } from 'react-native';
+import { BrandMark } from '../../src/components/BrandMark';
+import { Button, Card, Field, Notice, Screen } from '../../src/components/ui';
+import { colors, fonts, spacing, type } from '../../src/theme';
 
 export default function Login() {
   const { signIn } = useAuth();
@@ -32,34 +33,74 @@ export default function Login() {
   }
 
   return (
-    <Screen>
-      <Title>Welcome back</Title>
-      <Body muted>Sign in to book help or manage your visits.</Body>
+    <Screen safeTop>
+      <View style={styles.brand}>
+        <BrandMark size={52} />
+      </View>
 
-      {deleted === '1' && !error && (
-        <Notice tone="success" message="Your account has been deleted." />
-      )}
+      <View style={styles.heading}>
+        <Text accessibilityRole="header" style={styles.title}>
+          Welcome back
+        </Text>
+        <Text style={styles.subtitle}>Sign in to book help or manage your visits.</Text>
+      </View>
+
+      {deleted === '1' && !error && <Notice tone="success" message="Your account has been deleted." />}
       {!!error && <Notice message={error} />}
 
-      <Field
-        label="Email"
-        value={email}
-        onChangeText={setEmail}
-        placeholder="you@example.com"
-        keyboardType="email-address"
-        autoCapitalize="none"
-      />
-      <Field label="Password" value={password} onChangeText={setPassword} secureTextEntry />
-
-      <View style={{ gap: spacing.md, marginTop: spacing.sm }}>
-        <Button label="Sign in" onPress={submit} busy={busy} disabled={!email || !password} />
-        <Button
-          label="Create an account"
-          variant="secondary"
-          onPress={() => router.push('/(auth)/register')}
+      <Card style={styles.form}>
+        <Field
+          label="Email"
+          icon="mail-outline"
+          value={email}
+          onChangeText={setEmail}
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoComplete="email"
         />
-        <Button label="Privacy policy" variant="secondary" onPress={() => router.push('/privacy')} />
+        <Field
+          label="Password"
+          icon="lock-closed-outline"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          autoCapitalize="none"
+          autoComplete="current-password"
+        />
+        <Button label="Sign in" onPress={submit} busy={busy} disabled={!email || !password} />
+      </Card>
+
+      <View style={styles.switch}>
+        <Text style={styles.switchText}>New to Eldercare?</Text>
+        <Pressable accessibilityRole="button" onPress={() => router.push('/register')} style={styles.link}>
+          <Text style={styles.linkText}>Create an account</Text>
+        </Pressable>
+      </View>
+
+      <View style={styles.legal}>
+        <Pressable accessibilityRole="link" onPress={() => router.push('/privacy')} style={styles.link}>
+          <Text style={styles.legalText}>Privacy policy</Text>
+        </Pressable>
+        <Text style={styles.legalText}>·</Text>
+        <Pressable accessibilityRole="link" onPress={() => router.push('/terms')} style={styles.link}>
+          <Text style={styles.legalText}>Terms</Text>
+        </Pressable>
       </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  brand: { alignItems: 'center', marginTop: spacing.lg },
+  heading: { alignItems: 'center', gap: spacing.xs, marginVertical: spacing.sm },
+  title: { ...type.title, color: colors.text, textAlign: 'center' },
+  subtitle: { ...type.body, color: colors.textMuted, textAlign: 'center' },
+  form: { gap: spacing.md, padding: spacing.lg },
+  switch: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  switchText: { ...type.body, color: colors.textMuted },
+  link: { minHeight: 48, justifyContent: 'center' },
+  linkText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.primary },
+  legal: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.sm, marginTop: 'auto' },
+  legalText: { ...type.caption, color: colors.textMuted },
+});

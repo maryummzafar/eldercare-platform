@@ -1,46 +1,67 @@
 /**
- * Design tokens tuned for the people who pay for this product.
+ * Design tokens.
  *
  * Elders are the buying side, and the usual mobile defaults fail them: 14sp body
- * text, thin grey-on-white labels, and 32dp tap targets. Everything here is sized
- * up from those defaults on purpose — body text starts at 18, the smallest tap
- * target is 48dp, and no text colour drops below a 4.5:1 contrast ratio on its
- * background. Prefer these over ad-hoc values in screens.
+ * text, thin grey-on-white labels, and 32dp tap targets. Body text here starts at
+ * 17-18, the smallest tap target is 48dp, and no text colour drops below 4.5:1 on
+ * the surface it sits on. Prefer these over ad-hoc values in screens, so the app
+ * reads as one product and those floors hold as screens get added.
  */
 
 export const colors = {
-  // 7.4:1 on white — comfortably past AA for body text.
-  text: '#1A1D21',
-  // 4.6:1 on white. The floor for anything a user actually has to read.
-  textMuted: '#565C63',
-  background: '#FFFFFF',
-  surface: '#F4F6F8',
-  border: '#C9D0D8',
+  /** The app canvas. Cards sit on it in white. */
+  background: '#F4F6F9',
+  card: '#FFFFFF',
+  /** Quiet fills: inputs at rest, segmented controls, skeletons. */
+  surface: '#EDF1F5',
+  border: '#DDE3EA',
+  borderStrong: '#C3CCD6',
 
-  // 5.1:1 on white, and white text on it clears AA at our sizes.
+  // 15:1 and 6.2:1 on the canvas.
+  text: '#111827',
+  textMuted: '#4B5563',
+
+  // Brand. 5.1:1 on white; white text on it clears AA.
   primary: '#0B5FA5',
   primaryPressed: '#084A82',
+  primarySoft: '#E7F0FA',
   onPrimary: '#FFFFFF',
 
-  danger: '#A61B1B',
-  success: '#1B6B34',
-  warning: '#8A5A00',
+  /** The heart in the logo. Decorative only; never carries text. */
+  accent: '#F5A524',
+  accentSoft: '#FEF3DF',
 
-  disabled: '#9AA3AC',
+  success: '#15703F',
+  successSoft: '#E5F4EB',
+  danger: '#B42318',
+  dangerSoft: '#FDECEA',
+  warning: '#8A5A00',
+  warningSoft: '#FFF4D6',
+
+  disabled: '#A8B1BC',
 } as const;
 
 /**
- * 18 is the body floor, not the ceiling. Sizes step up rather than down so a
- * screen that needs emphasis gets bigger, never smaller.
+ * Inter, loaded in the root layout. Custom fonts on Android ignore fontWeight, so
+ * each weight is its own family and the type ramp names them explicitly.
  */
+export const fonts = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semibold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+} as const;
+
 export const type = {
-  title: { fontSize: 30, fontWeight: '700' as const, lineHeight: 38 },
-  heading: { fontSize: 24, fontWeight: '700' as const, lineHeight: 32 },
-  body: { fontSize: 18, fontWeight: '400' as const, lineHeight: 27 },
-  bodyStrong: { fontSize: 18, fontWeight: '600' as const, lineHeight: 27 },
-  label: { fontSize: 17, fontWeight: '600' as const, lineHeight: 24 },
-  // Only for genuinely secondary detail. Never for instructions or errors.
-  caption: { fontSize: 16, fontWeight: '400' as const, lineHeight: 22 },
+  display: { fontFamily: fonts.bold, fontSize: 32, lineHeight: 40, letterSpacing: -0.6 },
+  title: { fontFamily: fonts.bold, fontSize: 26, lineHeight: 34, letterSpacing: -0.4 },
+  heading: { fontFamily: fonts.semibold, fontSize: 20, lineHeight: 28, letterSpacing: -0.2 },
+  body: { fontFamily: fonts.regular, fontSize: 17, lineHeight: 26 },
+  bodyStrong: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 26 },
+  label: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 22 },
+  // Secondary detail only. Never instructions or errors.
+  caption: { fontFamily: fonts.regular, fontSize: 15, lineHeight: 21 },
+  small: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18 },
 } as const;
 
 export const spacing = {
@@ -51,22 +72,28 @@ export const spacing = {
   xl: 32,
 } as const;
 
+export const radius = {
+  sm: 10,
+  md: 14,
+  lg: 20,
+  pill: 999,
+} as const;
+
+/** One soft elevation for cards, the same on iOS, Android and web. */
+export const shadow = {
+  card: { boxShadow: '0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.08)' },
+  raised: { boxShadow: '0 -4px 16px rgba(16, 24, 40, 0.08)' },
+} as const;
+
 /**
  * Android's accessibility guidance puts the minimum touch target at 48dp.
- * Buttons and rows in this app meet it via minHeight, not padding maths that
- * a longer translation could quietly collapse.
+ * Buttons and rows meet it via minHeight, not padding maths that a longer
+ * translation could quietly collapse.
  */
 export const TOUCH_TARGET = 48;
 
 /**
- * Content never stretches past this. On a phone it is wider than the screen and so
- * does nothing; on a tablet, a landscape phone, or the web preview on a laptop it
- * stops lines of text running to 1200px, which is unreadable at our 18sp body size.
- * Screens stay a single centred column rather than gaining a desktop layout.
+ * Content never stretches past this. On a phone it does nothing; on a tablet or
+ * the website on a laptop it keeps one readable column instead of 1400px lines.
  */
-export const CONTENT_MAX_WIDTH = 560;
-
-export const radius = {
-  sm: 8,
-  md: 12,
-} as const;
+export const CONTENT_MAX_WIDTH = 600;

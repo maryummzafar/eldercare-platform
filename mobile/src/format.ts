@@ -5,11 +5,25 @@
  */
 
 /**
- * Rates and totals arrive as JSON numbers from BigDecimal(scale=2), so two
- * decimal places is the faithful rendering rather than a cosmetic choice.
+ * Rates and totals arrive as JSON numbers from BigDecimal(scale=2). Paise are shown
+ * only when there are any: "₹1,000" reads cleaner than "₹1,000.00", while
+ * "₹312.50" still shows exactly what was billed. Grouping follows Indian
+ * convention (₹1,00,000).
  */
 export function formatMoney(amount: number): string {
-  return `₹${amount.toFixed(2)}`;
+  const hasPaise = Math.round(amount * 100) % 100 !== 0;
+  return `₹${amount.toLocaleString('en-IN', {
+    minimumFractionDigits: hasPaise ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+/** "Good morning" / "Good afternoon" / "Good evening", for the home screen greeting. */
+export function greeting(now = new Date()): string {
+  const hour = now.getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
 }
 
 export function formatDateTime(iso: string): string {

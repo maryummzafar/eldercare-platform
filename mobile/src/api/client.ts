@@ -69,6 +69,18 @@ export class ApiError extends Error {
 let authToken: string | null = null;
 let onUnauthorized: (() => void) | null = null;
 
+/**
+ * Resolves once AuthContext has read the stored token back at launch. Requests wait
+ * on it: a screen opened straight from a link mounts before that read finishes,
+ * and would otherwise call the API without its token, get a 401, and sign a user
+ * out who was in fact signed in.
+ */
+let markSessionRestored: () => void = () => {};
+const sessionRestored = new Promise<void>((resolve) => {
+  markSessionRestored = resolve;
+});
+export { markSessionRestored };
+
 export function setAuthToken(token: string | null): void {
   authToken = token;
 }
@@ -88,6 +100,11 @@ async function request<T>(
 ): Promise<T> {
   const { method = 'GET', body, query } = options;
 
+  await sessionRestored;
+  // Captured now, not when the response lands: what matters is whether *this*
+  // request carried a token, not whether one has been set since.
+  const sentToken = authToken;
+
   const url = new URL(`${BASE_URL}${path}`);
   if (query) {
     for (const [key, value] of Object.entries(query)) {
@@ -104,7 +121,7 @@ async function request<T>(
       headers: {
         Accept: 'application/json',
         ...(body ? { 'Content-Type': 'application/json' } : {}),
-        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        ...(sentToken ? { Authorization: `Bearer ${sentToken}` } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -116,8 +133,10 @@ async function request<T>(
 
   // Only a request that carried a token can have an expired session. A 401 from
   // login itself means a wrong password and falls through to the server's message.
-  if (response.status === 401 && authToken) {
-    onUnauthorized?.();
+  if (response.status === 401 && sentToken) {
+    // Only if that token is still the current one; a stale request finishing
+    // after a fresh sign-in must not undo it.
+    if (sentToken === authToken) onUnauthorized?.();
     throw new ApiError(401, 'Your session has expired. Please sign in again.');
   }
 

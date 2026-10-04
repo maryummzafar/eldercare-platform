@@ -78,6 +78,8 @@ export interface HelperResponse {
   averageRating: number | null;
   completedBookings: number;
   acceptingBookings: boolean;
+  /** Only meaningful on the helper's own profile; search returns verified helpers only. */
+  verified: boolean;
 }
 
 /** Mirrors AdminHelperResponse: the vetting view, with contact details. */

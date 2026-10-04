@@ -5,9 +5,9 @@ import { useAuth } from '../src/auth/AuthContext';
 import { Loading, Screen } from '../src/components/ui';
 
 /**
- * The only place that decides where a launch lands. Everything downstream can
- * assume a session exists, because this screen holds the app here until the
- * stored token has been read back.
+ * The only place that decides where a launch lands. It holds the app here until
+ * the stored token has been read back, so nothing downstream sees a half-restored
+ * session.
  */
 export default function Index() {
   const { session, loading } = useAuth();
@@ -21,14 +21,13 @@ export default function Index() {
   }
 
   // On the website, a visitor who is not signed in is most likely meeting the
-  // service for the first time, so they get the landing page rather than a login form.
+  // service for the first time, so they get the front page rather than a login form.
   if (!session) {
-    return <Redirect href={Platform.OS === 'web' ? '/welcome' : '/(auth)/login'} />;
+    return <Redirect href={Platform.OS === 'web' ? '/welcome' : '/login'} />;
   }
 
-  if (session.role === 'HELPER') return <Redirect href="/(helper)" />;
-  if (session.role === 'ELDER') return <Redirect href="/(elder)" />;
-  if (session.role === 'ADMIN') return <Redirect href="/(admin)" />;
-
-  return <Redirect href="/(auth)/unsupported-role" />;
+  if (session.role === 'ELDER' || session.role === 'HELPER' || session.role === 'ADMIN') {
+    return <Redirect href="/home" />;
+  }
+  return <Redirect href="/unsupported-role" />;
 }

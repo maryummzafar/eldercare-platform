@@ -25,6 +25,11 @@ public class HelperResponse {
     private BigDecimal averageRating;
     private int completedBookings;
     private boolean acceptingBookings;
+    /**
+     * Always true in search results, which only ever contain verified helpers; it
+     * matters on a helper's own profile, where it tells them whether they are live yet.
+     */
+    private boolean verified;
 
     public static HelperResponse from(HelperProfile profile) {
         return HelperResponse.builder()
@@ -37,6 +42,7 @@ public class HelperResponse {
                 .averageRating(profile.getAverageRating())
                 .completedBookings(profile.getCompletedBookings())
                 .acceptingBookings(profile.isAcceptingBookings())
+                .verified(profile.isVerified())
                 .build();
     }
 }
