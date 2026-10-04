@@ -40,7 +40,8 @@ export default function Register() {
         phone: phone.trim() || undefined,
         address: address.trim() || undefined,
       });
-      router.replace('/');
+      // The signup emailed a code; confirming it is the natural next step.
+      router.replace('/verify-email');
     } catch (e) {
       if (e instanceof ApiError) {
         setError(e.message);

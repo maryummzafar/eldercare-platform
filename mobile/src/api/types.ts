@@ -52,6 +52,23 @@ export interface AuthResponse {
   name: string;
   email: string;
   role: UserRole;
+  /** False until the user enters the code emailed at signup. Elders cannot book until then. */
+  emailVerified: boolean;
+}
+
+/** Mirrors MeResponse: the signed-in user as the server sees them now. */
+export interface MeResponse {
+  userId: number;
+  name: string;
+  email: string;
+  role: UserRole;
+  emailVerified: boolean;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  code: string;
+  newPassword: string;
 }
 
 export interface RegisterRequest {
@@ -93,6 +110,8 @@ export interface AdminHelperResponse {
   hourlyRate: number;
   offeredServices: ServiceType[];
   verified: boolean;
+  /** Must be true before the helper can be approved. */
+  emailVerified: boolean;
   joinedAt: string;
 }
 

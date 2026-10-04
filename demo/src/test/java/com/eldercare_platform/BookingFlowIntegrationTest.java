@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,6 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(CapturingEmailConfig.class)
 // Each test rolls back at the end. Without this the tests share one in-memory H2 and
 // a helper verified in one test leaks into another test's search results.
 @Transactional
@@ -39,6 +41,9 @@ class BookingFlowIntegrationTest {
 
     @Autowired
     private ObjectMapper json;
+
+    @Autowired
+    private CapturingEmailConfig.Inbox inbox;
 
     @Test
     void elderCanBookAVerifiedHelperAndBeBilledForTheVisit() throws Exception {
@@ -232,7 +237,15 @@ class BookingFlowIntegrationTest {
         JsonNode node = json.readTree(body);
         assertThat(node.get("token").asText()).isNotBlank();
         registeredIds.put(email, node.get("userId").asLong());
-        return node.get("token").asText();
+        String token = node.get("token").asText();
+
+        // Confirm the address with the emailed code, as every real user must before booking.
+        mvc.perform(post("/api/account/verify-email")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of("code", inbox.latestCode(email)))))
+                .andExpect(status().isOk());
+        return token;
     }
 
     private String login(String email, String password) throws Exception {

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError, api } from '../../../src/api/client';
 import { SERVICE_LABELS } from '../../../src/api/types';
+import { useAuth } from '../../../src/auth/AuthContext';
 import type { HelperResponse, ServiceType } from '../../../src/api/types';
 import {
   Avatar,
@@ -30,6 +31,7 @@ const DAYS_AHEAD = 7;
 export default function HelperDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const helperId = Number(id);
+  const { session } = useAuth();
 
   const [helper, setHelper] = useState<HelperResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -152,12 +154,18 @@ export default function HelperDetail() {
               <Text style={styles.summaryTotal}>{formatMoney(estimate)}</Text>
             </View>
             <View style={styles.summaryButton}>
-              <Button
-                label="Request booking"
-                onPress={book}
-                busy={busy}
-                disabled={!service || noTimesToday}
-              />
+              {session?.emailVerified === false ? (
+                // The server refuses bookings until the email is confirmed; say so
+                // up front rather than after they have filled everything in.
+                <Button label="Confirm email to book" onPress={() => router.push('/verify-email')} />
+              ) : (
+                <Button
+                  label="Request booking"
+                  onPress={book}
+                  busy={busy}
+                  disabled={!service || noTimesToday}
+                />
+              )}
             </View>
           </View>
         </>

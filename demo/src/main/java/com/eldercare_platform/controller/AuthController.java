@@ -1,8 +1,10 @@
 package com.eldercare_platform.controller;
 
 import com.eldercare_platform.dto.AuthResponse;
+import com.eldercare_platform.dto.ForgotPasswordRequest;
 import com.eldercare_platform.dto.LoginRequest;
 import com.eldercare_platform.dto.RegisterRequest;
+import com.eldercare_platform.dto.ResetPasswordRequest;
 import com.eldercare_platform.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,5 +27,18 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    /** Always 202, whether or not the email has an account. */
+    @PostMapping("/password/forgot")
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.forgotPassword(request.getEmail());
+        return ResponseEntity.accepted().build();
+    }
+
+    /** Sets a new password from the emailed code and returns a fresh sign-in. */
+    @PostMapping("/password/reset")
+    public ResponseEntity<AuthResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        return ResponseEntity.ok(authService.resetPassword(request));
     }
 }

@@ -79,7 +79,31 @@ All endpoints except `/api/auth/**` require `Authorization: Bearer <token>`.
 | POST   | `/api/auth/register` | name, email, password, role, phone?, address? | 201 + token & profile      |
 | POST   | `/api/auth/login`    | email, password                             | 200 + token & profile        |
 
+| POST   | `/api/auth/password/forgot` | email                                  | 202 always, whether or not the email has an account |
+| POST   | `/api/auth/password/reset`  | email, code, newPassword               | 200 + token & profile        |
+
 `role` must be `ELDER` or `HELPER`. Passwords are 8–72 characters, BCrypt-hashed.
+
+### Email codes
+
+Signup emails a 6-digit code to confirm the address; `emailVerified` in the auth
+response says whether that has happened. Elders cannot book, and admins cannot approve
+a helper, until it has. Accounts that existed before this was added were marked
+verified by migration V2.
+
+Codes are 6 digits so an elderly user can read one off the email and type it into the
+app. That makes guessing the threat: each code allows 5 tries and lives 15 minutes, a
+new one can be requested at most once a minute (429 otherwise), issuing one retires the
+last, and only a SHA-256 hash is stored.
+
+A password reset also sets `credentialsChangedAt`, and any token issued before it is
+refused, so every other signed-in device is signed out.
+
+**Sending mail.** Set `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` and
+optionally `MAIL_FROM`. With Gmail: `smtp.gmail.com`, port 587, your address, and an
+App Password from <https://myaccount.google.com/apppasswords> (not your normal
+password); Gmail allows about 500 messages a day. Without `MAIL_HOST`, every email is
+written to the server log instead, which is what development and tests use.
 
 ### Helpers
 
@@ -140,9 +164,12 @@ it) and on every incoming chat message.
 
 ### Account
 
-| Method | Path                  | Body     | Effect                                         |
-|--------|-----------------------|----------|------------------------------------------------|
-| POST   | `/api/account/delete` | password | 204. Permanently deletes the caller's account. |
+| Method | Path                               | Body     | Effect                                         |
+|--------|------------------------------------|----------|------------------------------------------------|
+| GET    | `/api/account/me`                  |          | The caller's profile, including `emailVerified`. |
+| POST   | `/api/account/verify-email`        | code     | Confirms the email address.                    |
+| POST   | `/api/account/verify-email/resend` |          | 202. Sends a new code (once a minute).         |
+| POST   | `/api/account/delete`              | password | 204. Permanently deletes the caller's account. |
 
 Required by Google Play. The user row is anonymised rather than removed, because
 bookings involve two people: name, email, phone, address, password and message text

@@ -113,6 +113,9 @@ public class HelperService {
     public AdminHelperResponse setVerified(Long helperUserId, boolean verified) {
         HelperProfile profile = helperProfileRepository.findByUserId(helperUserId)
                 .orElseThrow(() -> ApiException.notFound("Helper not found"));
+        if (verified && !profile.getUser().isEmailVerified()) {
+            throw ApiException.conflict("This helper has not confirmed their email address yet.");
+        }
         profile.setVerified(verified);
         return AdminHelperResponse.from(profile);
     }

@@ -9,10 +9,12 @@ import type {
   HelperProfileRequest,
   HelperResponse,
   LoginRequest,
+  MeResponse,
   Page,
   MessageResponse,
   NotificationResponse,
   RegisterRequest,
+  ResetPasswordRequest,
   SendMessageRequest,
   ServiceType,
   UnreadCountResponse,
@@ -176,6 +178,21 @@ export const api = {
 
   login: (body: LoginRequest) =>
     request<AuthResponse>('/api/auth/login', { method: 'POST', body }),
+
+  // Always succeeds, whether or not the email has an account.
+  forgotPassword: (email: string) =>
+    request<void>('/api/auth/password/forgot', { method: 'POST', body: { email } }),
+
+  resetPassword: (body: ResetPasswordRequest) =>
+    request<AuthResponse>('/api/auth/password/reset', { method: 'POST', body }),
+
+  me: () => request<MeResponse>('/api/account/me'),
+
+  verifyEmail: (code: string) =>
+    request<MeResponse>('/api/account/verify-email', { method: 'POST', body: { code } }),
+
+  resendVerification: () =>
+    request<void>('/api/account/verify-email/resend', { method: 'POST' }),
 
   searchHelpers: (query: {
     city?: string;

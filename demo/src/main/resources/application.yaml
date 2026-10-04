@@ -58,6 +58,18 @@ app:
     # the Android app is unaffected. In production: https://app.yourdomain.com
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:8081,http://localhost:8082}
 
+  mail:
+    # SMTP server for confirmation and password-reset codes. Leave MAIL_HOST unset in
+    # development and every email is written to the log instead of being sent.
+    # Gmail: smtp.gmail.com / 587, your address, and an App Password (not your
+    # normal password). Any provider with SMTP works the same way.
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    # Defaults to the username when empty.
+    from: ${MAIL_FROM:}
+
   rate-limit:
     # Login + signup attempts per client address per minute.
     auth-per-minute: ${AUTH_RATE_LIMIT_PER_MINUTE:10}

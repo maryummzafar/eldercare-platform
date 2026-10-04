@@ -1,6 +1,8 @@
 package com.eldercare_platform.controller;
 
 import com.eldercare_platform.dto.DeleteAccountRequest;
+import com.eldercare_platform.dto.MeResponse;
+import com.eldercare_platform.dto.VerifyEmailRequest;
 import com.eldercare_platform.security.AuthenticatedUser;
 import com.eldercare_platform.service.AccountService;
 import jakarta.validation.Valid;
@@ -15,6 +17,27 @@ import org.springframework.web.bind.annotation.*;
 public class AccountController {
 
     private final AccountService accountService;
+
+    /** The signed-in user as stored now, e.g. after confirming their email on another device. */
+    @GetMapping("/me")
+    public MeResponse me(@AuthenticationPrincipal AuthenticatedUser principal) {
+        return MeResponse.from(principal.getUser());
+    }
+
+    /** Confirms the email address with the code sent at signup. */
+    @PostMapping("/verify-email")
+    public MeResponse verifyEmail(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @Valid @RequestBody VerifyEmailRequest request) {
+        return accountService.verifyEmail(principal.getUser(), request.getCode());
+    }
+
+    /** Sends a fresh confirmation code. At most once a minute. */
+    @PostMapping("/verify-email/resend")
+    public ResponseEntity<Void> resendVerification(@AuthenticationPrincipal AuthenticatedUser principal) {
+        accountService.resendVerification(principal.getUser());
+        return ResponseEntity.accepted().build();
+    }
 
     /**
      * Permanently deletes the caller's account. POST rather than DELETE because it

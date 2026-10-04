@@ -7,6 +7,7 @@ import type { AdminHelperResponse } from '../api/types';
 import { confirm } from '../confirm';
 import {
   Avatar,
+  Badge,
   Button,
   Card,
   Chip,
@@ -111,6 +112,11 @@ export function AdminHome() {
               </View>
               <Text style={styles.rate}>{formatMoney(helper.hourlyRate)}/h</Text>
             </View>
+            <Badge
+              label={helper.emailVerified ? 'Email confirmed' : 'Email not confirmed yet'}
+              tone={helper.emailVerified ? 'success' : 'warning'}
+              icon={helper.emailVerified ? 'checkmark-circle' : 'time-outline'}
+            />
             <View style={styles.details}>
               <DetailRow icon="mail-outline">{helper.email}</DetailRow>
               {!!helper.phone && <DetailRow icon="call-outline">{helper.phone}</DetailRow>}
@@ -130,9 +136,11 @@ export function AdminHome() {
               />
             ) : (
               <Button
-                label="Approve helper"
+                label={helper.emailVerified ? 'Approve helper' : 'Waiting for email confirmation'}
                 icon="shield-checkmark"
                 busy={actingOn === helper.helperId}
+                // The server refuses this until the helper has confirmed their email.
+                disabled={!helper.emailVerified}
                 onPress={() => setVerified(helper, true)}
               />
             )}

@@ -1,6 +1,9 @@
 package com.eldercare_platform.service;
 
+import com.eldercare_platform.dto.MeResponse;
 import com.eldercare_platform.entity.Booking;
+import com.eldercare_platform.enums.CodePurpose;
+import com.eldercare_platform.repository.VerificationCodeRepository;
 import com.eldercare_platform.entity.User;
 import com.eldercare_platform.enums.BookingStatus;
 import com.eldercare_platform.enums.UserRole;
@@ -40,8 +43,28 @@ public class AccountService {
     private final HelperProfileRepository helperProfileRepository;
     private final MessageRepository messageRepository;
     private final NotificationRepository notificationRepository;
+    private final VerificationCodeRepository verificationCodeRepository;
+    private final VerificationCodeService verificationCodeService;
     private final BookingService bookingService;
     private final PasswordEncoder passwordEncoder;
+
+    @Transactional(noRollbackFor = ApiException.class)
+    public MeResponse verifyEmail(User caller, String code) {
+        User user = userRepository.findById(caller.getId())
+                .orElseThrow(() -> ApiException.notFound("Account not found"));
+        if (!user.isEmailVerified()) {
+            verificationCodeService.verify(user, CodePurpose.EMAIL_VERIFICATION, code);
+            user.setEmailVerified(true);
+        }
+        return MeResponse.from(user);
+    }
+
+    public void resendVerification(User caller) {
+        if (caller.isEmailVerified()) {
+            throw ApiException.badRequest("Your email address is already confirmed.");
+        }
+        verificationCodeService.issue(caller, CodePurpose.EMAIL_VERIFICATION);
+    }
 
     @Transactional
     public void deleteAccount(User caller, String password) {
@@ -76,6 +99,7 @@ public class AccountService {
         messageRepository.redactBySender(userId, REDACTED_MESSAGE);
         bookingRepository.scrubElderDetails(userId);
         notificationRepository.deleteByRecipient(userId);
+        verificationCodeRepository.deleteByUser(userId);
 
         // Reloaded: the bulk updates above cleared the persistence context, and the caller
         // came from the security filter, outside this transaction.

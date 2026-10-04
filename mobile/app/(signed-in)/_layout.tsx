@@ -30,6 +30,7 @@ export default function SignedInLayout() {
       <Stack.Screen name="helper/[id]" options={{ title: '' }} />
       <Stack.Screen name="chat/[bookingId]" options={{ title: 'Messages' }} />
       <Stack.Screen name="profile" options={{ title: 'Edit profile' }} />
+      <Stack.Screen name="verify-email" options={{ title: 'Confirm email' }} />
     </Stack>
   );
 }

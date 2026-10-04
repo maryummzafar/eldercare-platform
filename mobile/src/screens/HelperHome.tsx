@@ -6,6 +6,7 @@ import { api } from '../api/client';
 import type { BookingResponse, HelperResponse } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { BookingCard } from '../components/BookingCard';
+import { ConfirmEmailBanner } from '../components/ConfirmEmailBanner';
 import {
   Avatar,
   Button,
@@ -74,6 +75,8 @@ export function HelperHome() {
   return (
     <Screen safeTop refreshing={refreshing} onRefresh={onRefresh}>
       <ScreenHeader eyebrow={greeting()} title={firstName} right={<Avatar name={session?.name ?? '?'} size={48} />} />
+
+      <ConfirmEmailBanner />
 
       {profile !== undefined && <ProfileStatus profile={profile} />}
 

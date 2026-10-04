@@ -27,6 +27,8 @@ public class AdminHelperResponse {
     private BigDecimal hourlyRate;
     private Set<ServiceType> offeredServices;
     private boolean verified;
+    /** Must be true before the helper can be approved. */
+    private boolean emailVerified;
     private Instant joinedAt;
 
     public static AdminHelperResponse from(HelperProfile profile) {
@@ -43,6 +45,7 @@ public class AdminHelperResponse {
                 // touches the Hibernate collection.
                 .offeredServices(Set.copyOf(profile.getOfferedServices()))
                 .verified(profile.isVerified())
+                .emailVerified(user.isEmailVerified())
                 .joinedAt(user.getCreatedAt())
                 .build();
     }

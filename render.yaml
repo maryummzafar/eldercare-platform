@@ -47,6 +47,18 @@ services:
         sync: false
       - key: JPA_SHOW_SQL
         value: "false"
+      # Email for confirmation and password-reset codes. Without MAIL_HOST no
+      # email is sent and nobody can confirm their account.
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_FROM
+        sync: false
 
   # --- Website (the same app, built for the browser) --------------------------
   - type: web

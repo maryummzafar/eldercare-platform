@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react';
 
 import { api, markSessionRestored, setAuthToken, setUnauthorizedHandler } from '../api/client';
-import type { AuthResponse, LoginRequest, RegisterRequest, UserRole } from '../api/types';
+import type { AuthResponse, LoginRequest, MeResponse, RegisterRequest, UserRole } from '../api/types';
 import { deleteItem, getItem, setItem } from './storage';
 
 /**
@@ -18,6 +18,7 @@ export interface Session {
   name: string;
   email: string;
   role: UserRole;
+  emailVerified: boolean;
 }
 
 interface AuthState {
@@ -26,6 +27,10 @@ interface AuthState {
   loading: boolean;
   signIn: (credentials: LoginRequest) => Promise<void>;
   signUp: (details: RegisterRequest) => Promise<void>;
+  /** Signs in with a response the server already issued, e.g. after a password reset. */
+  acceptSignIn: (auth: AuthResponse) => Promise<void>;
+  /** Replaces the stored profile, e.g. once the email is confirmed. */
+  updateProfile: (me: MeResponse) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -47,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: auth.name,
       email: auth.email,
       role: auth.role,
+      emailVerified: auth.emailVerified,
     };
     setAuthToken(auth.token);
     setSession(next);
@@ -54,6 +60,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setItem(TOKEN_KEY, auth.token),
       setItem(SESSION_KEY, JSON.stringify(next)),
     ]);
+  }, []);
+
+  const updateProfile = useCallback(async (me: MeResponse) => {
+    const next: Session = {
+      userId: me.userId,
+      name: me.name,
+      email: me.email,
+      role: me.role,
+      emailVerified: me.emailVerified,
+    };
+    setSession(next);
+    await setItem(SESSION_KEY, JSON.stringify(next));
   }, []);
 
   // Restore a previous sign-in. Tokens last 24h server-side and there are no
@@ -72,6 +90,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (token && stored) {
           setAuthToken(token);
           setSession(JSON.parse(stored) as Session);
+          // The stored copy may be stale, e.g. the email was confirmed on another
+          // device, or it predates a field. Refresh it in the background.
+          api.me().then(
+            (me) => {
+              if (!cancelled) void updateProfile(me);
+            },
+            () => {},
+          );
         }
       } catch {
         // A corrupt or unreadable keystore entry should not brick the app;
@@ -87,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [clearSession]);
+  }, [clearSession, updateProfile]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -102,9 +128,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       loading,
       signIn: async (credentials) => persist(await api.login(credentials)),
       signUp: async (details) => persist(await api.register(details)),
+      acceptSignIn: persist,
+      updateProfile,
       signOut: clearSession,
     }),
-    [session, loading, persist, clearSession],
+    [session, loading, persist, updateProfile, clearSession],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -45,6 +45,17 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = true;
 
+    /** True once the user has entered the code sent to their email address. */
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean emailVerified = false;
+
+    /**
+     * When the password last changed. Tokens issued before this are refused, so a
+     * password reset signs out every other device.
+     */
+    private Instant credentialsChangedAt;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

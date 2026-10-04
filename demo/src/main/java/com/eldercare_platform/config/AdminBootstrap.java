@@ -51,6 +51,8 @@ public class AdminBootstrap {
                     .password(passwordEncoder.encode(password))
                     .role(UserRole.ADMIN)
                     .enabled(true)
+                    // Configured by whoever runs the server, so there is nothing to confirm.
+                    .emailVerified(true)
                     .build());
 
             log.info("Seeded initial admin account: {}", normalized);

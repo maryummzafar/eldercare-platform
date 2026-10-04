@@ -6,6 +6,7 @@ import { ApiError, api } from '../api/client';
 import { ALL_SERVICES, SERVICE_LABELS, STATUS_LABELS } from '../api/types';
 import type { BookingResponse, HelperResponse, ServiceType } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
+import { ConfirmEmailBanner } from '../components/ConfirmEmailBanner';
 import { HelperCard } from '../components/HelperCard';
 import {
   Avatar,
@@ -98,6 +99,8 @@ export function ElderHome() {
         title={firstName}
         right={<Avatar name={session?.name ?? '?'} size={48} />}
       />
+
+      <ConfirmEmailBanner />
 
       {nextVisit && <NextVisit booking={nextVisit} />}
 

@@ -3,13 +3,16 @@ package com.eldercare_platform.service;
 import com.eldercare_platform.dto.AuthResponse;
 import com.eldercare_platform.dto.LoginRequest;
 import com.eldercare_platform.dto.RegisterRequest;
+import com.eldercare_platform.dto.ResetPasswordRequest;
 import com.eldercare_platform.entity.User;
+import com.eldercare_platform.enums.CodePurpose;
 import com.eldercare_platform.enums.UserRole;
 import com.eldercare_platform.exception.ApiException;
 import com.eldercare_platform.repository.UserRepository;
 import com.eldercare_platform.security.AuthenticatedUser;
 import com.eldercare_platform.security.JwtService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -17,8 +20,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Locale;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -27,8 +32,13 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
+    private final VerificationCodeService verificationCodeService;
 
-    @Transactional
+    /**
+     * Not one transaction on purpose: the account is committed first, and the
+     * confirmation email is sent after. A mail outage then leaves a signed-up user who
+     * can ask for the code again, rather than failing the whole signup.
+     */
     public AuthResponse register(RegisterRequest request) {
         String email = normalizeEmail(request.getEmail());
 
@@ -41,7 +51,7 @@ public class AuthService {
             throw ApiException.badRequest("Cannot self-register as an administrator");
         }
 
-        User user = User.builder()
+        User user = userRepository.save(User.builder()
                 .name(request.getName().trim())
                 .email(email)
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -49,9 +59,13 @@ public class AuthService {
                 .address(request.getAddress())
                 .role(request.getRole())
                 .enabled(true)
-                .build();
+                .build());
 
-        userRepository.save(user);
+        try {
+            verificationCodeService.issue(user, CodePurpose.EMAIL_VERIFICATION);
+        } catch (ApiException e) {
+            log.warn("Signed up user {} but could not send the confirmation code: {}", user.getId(), e.getMessage());
+        }
 
         return buildResponse(user);
     }
@@ -69,6 +83,45 @@ public class AuthService {
         return buildResponse(user);
     }
 
+    /**
+     * Emails a reset code if the address belongs to an active account. Says nothing
+     * either way, so this endpoint cannot be used to find out who has an account.
+     */
+    public void forgotPassword(String rawEmail) {
+        userRepository.findByEmail(normalizeEmail(rawEmail))
+                .filter(User::isEnabled)
+                .ifPresent(user -> {
+                    try {
+                        verificationCodeService.issue(user, CodePurpose.PASSWORD_RESET);
+                    } catch (ApiException e) {
+                        // Cooldown or mail outage. Surfacing either would reveal that the
+                        // account exists, so it is logged rather than returned.
+                        log.info("Password reset for user {} not sent: {}", user.getId(), e.getMessage());
+                    }
+                });
+    }
+
+    /**
+     * Sets a new password from an emailed code and signs the user in. Every token
+     * issued before now stops working, so any other device is signed out.
+     */
+    @Transactional(noRollbackFor = ApiException.class)
+    public AuthResponse resetPassword(ResetPasswordRequest request) {
+        User user = userRepository.findByEmail(normalizeEmail(request.getEmail()))
+                .filter(User::isEnabled)
+                // Same message as a wrong code: an unknown email must look no different.
+                .orElseThrow(() -> ApiException.badRequest("That code is not right. Check the email and try again."));
+
+        verificationCodeService.verify(user, CodePurpose.PASSWORD_RESET, request.getCode());
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setCredentialsChangedAt(Instant.now());
+        // Receiving the code proves they control the address.
+        user.setEmailVerified(true);
+
+        return buildResponse(user);
+    }
+
     private AuthResponse buildResponse(User user) {
         String token = jwtService.generateToken(new AuthenticatedUser(user));
         return AuthResponse.builder()
@@ -77,6 +130,7 @@ public class AuthService {
                 .name(user.getName())
                 .email(user.getEmail())
                 .role(user.getRole())
+                .emailVerified(user.isEmailVerified())
                 .build();
     }
 

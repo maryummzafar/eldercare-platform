@@ -68,6 +68,9 @@ export default function Login() {
           autoCapitalize="none"
           autoComplete="current-password"
         />
+        <Pressable accessibilityRole="button" onPress={() => router.push('/forgot-password')} style={styles.forgot}>
+          <Text style={styles.linkText}>Forgot password?</Text>
+        </Pressable>
         <Button label="Sign in" onPress={submit} busy={busy} disabled={!email || !password} />
       </Card>
 
@@ -100,6 +103,7 @@ const styles = StyleSheet.create({
   switch: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   switchText: { ...type.body, color: colors.textMuted },
   link: { minHeight: 48, justifyContent: 'center' },
+  forgot: { minHeight: 48, justifyContent: 'center', alignSelf: 'flex-end', marginTop: -spacing.sm },
   linkText: { fontFamily: fonts.semibold, fontSize: 17, color: colors.primary },
   legal: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: spacing.sm, marginTop: 'auto' },
   legalText: { ...type.caption, color: colors.textMuted },

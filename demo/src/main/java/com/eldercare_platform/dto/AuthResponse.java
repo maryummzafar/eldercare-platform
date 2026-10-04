@@ -15,4 +15,6 @@ public class AuthResponse {
     private String name;
     private String email;
     private UserRole role;
+    /** False until the user enters the code emailed to them. Elders cannot book until then. */
+    private boolean emailVerified;
 }

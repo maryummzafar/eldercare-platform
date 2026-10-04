@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -28,6 +29,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import(CapturingEmailConfig.class)
 @Transactional
 class LaunchReadinessIntegrationTest {
 
@@ -38,6 +40,9 @@ class LaunchReadinessIntegrationTest {
 
     @Autowired
     private ObjectMapper json;
+
+    @Autowired
+    private CapturingEmailConfig.Inbox inbox;
 
     @Test
     void badInputIsA400NotA401() throws Exception {
@@ -157,7 +162,12 @@ class LaunchReadinessIntegrationTest {
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         var node = json.readTree(body);
-        return new Registered(node.get("token").asText(), node.get("userId").asLong());
+        String token = node.get("token").asText();
+        mvc.perform(post("/api/account/verify-email").header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json.writeValueAsString(Map.of("code", inbox.latestCode(email)))))
+                .andExpect(status().isOk());
+        return new Registered(token, node.get("userId").asLong());
     }
 
     private String login(String email, String password) throws Exception {

@@ -9,6 +9,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +50,21 @@ public class JwtService {
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         return extractUsername(token).equals(userDetails.getUsername())
-                && !isTokenExpired(token);
+                && !isTokenExpired(token)
+                && !issuedBeforeCredentialsChanged(token, userDetails);
+    }
+
+    /**
+     * A password reset must sign out every other device. Tokens are stateless, so
+     * instead of revoking them we refuse any issued before the change. Compared at
+     * whole seconds, the precision of the token's issued-at.
+     */
+    private boolean issuedBeforeCredentialsChanged(String token, UserDetails userDetails) {
+        if (!(userDetails instanceof AuthenticatedUser authenticated)) return false;
+        Instant changedAt = authenticated.getUser().getCredentialsChangedAt();
+        if (changedAt == null) return false;
+        Instant issuedAt = extractClaim(token, Claims::getIssuedAt).toInstant();
+        return issuedAt.isBefore(changedAt.truncatedTo(ChronoUnit.SECONDS));
     }
 
     private boolean isTokenExpired(String token) {

@@ -50,6 +50,11 @@ public class BookingService {
         if (elder.getRole() != UserRole.ELDER) {
             throw ApiException.forbidden("Only elders can request bookings");
         }
+        // A booking sends a stranger to an address, so we must be able to reach the
+        // person who made it.
+        if (!elder.isEmailVerified()) {
+            throw ApiException.forbidden("Please confirm your email address before booking.");
+        }
 
         Instant start = request.getScheduledStart();
         Instant end = request.getScheduledEnd();

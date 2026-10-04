@@ -290,6 +290,45 @@ export function Field({
   );
 }
 
+/**
+ * One large box for a six-digit emailed code. Digits only, spaced wide so each is
+ * easy to check against the email, and offered the code from the keyboard where
+ * the phone supports it.
+ */
+export function CodeField({ value, onChangeText, error, label = 'Code from the email' }: {
+  value: string;
+  onChangeText: (next: string) => void;
+  error?: string;
+  label?: string;
+}) {
+  const [focused, setFocused] = useState(false);
+  return (
+    <View style={styles.field}>
+      <Text style={styles.fieldLabel}>{label}</Text>
+      <TextInput
+        value={value}
+        onChangeText={(text) => onChangeText(text.replace(/\D/g, '').slice(0, 6))}
+        keyboardType="number-pad"
+        autoComplete="one-time-code"
+        textContentType="oneTimeCode"
+        maxLength={6}
+        placeholder="••••••"
+        placeholderTextColor={colors.disabled}
+        accessibilityLabel={label}
+        accessibilityHint={error ?? 'Six digits'}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        style={[styles.code, focused && styles.inputFocused, !!error && styles.inputError]}
+      />
+      {!!error && (
+        <Text accessibilityLiveRegion="polite" style={styles.fieldError}>
+          {error}
+        </Text>
+      )}
+    </View>
+  );
+}
+
 const NOTICE_TONES = {
   error: { bg: colors.dangerSoft, fg: colors.danger, icon: 'alert-circle' as IconName },
   info: { bg: colors.primarySoft, fg: colors.primary, icon: 'information-circle' as IconName },
@@ -575,6 +614,19 @@ const styles = StyleSheet.create({
   } as object,
   inputMultiline: { minHeight: TOUCH_TARGET * 2, textAlignVertical: 'top' },
   reveal: { minWidth: TOUCH_TARGET, minHeight: TOUCH_TARGET, alignItems: 'center', justifyContent: 'center' },
+  code: {
+    minHeight: 68,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.card,
+    textAlign: 'center',
+    fontFamily: fonts.bold,
+    fontSize: 32,
+    letterSpacing: 12,
+    color: colors.text,
+    outlineStyle: 'none',
+  } as object,
   fieldError: { ...type.caption, color: colors.danger },
   fieldHint: { ...type.caption, color: colors.textMuted },
 
