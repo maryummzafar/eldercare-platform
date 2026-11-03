@@ -70,6 +70,7 @@ class LaunchReadinessIntegrationTest {
     void deletingAnAccountErasesTheUserAndCancelsTheirOpenBookings() throws Exception {
         Registered elder = register("Edna Elder", "edna@test.local", "ELDER");
         Registered helper = register("Hugo Helper", "hugo@test.local", "HELPER");
+        verifyIdentity(elder);
         publishAndVerify(helper);
 
         long bookingId = book(elder, helper);
@@ -116,6 +117,7 @@ class LaunchReadinessIntegrationTest {
     void anAccountCannotBeDeletedMidVisit() throws Exception {
         Registered elder = register("Ivy Elder", "ivy@test.local", "ELDER");
         Registered helper = register("Ian Helper", "ian@test.local", "HELPER");
+        verifyIdentity(elder);
         publishAndVerify(helper);
 
         long bookingId = book(elder, helper);
@@ -139,6 +141,11 @@ class LaunchReadinessIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[?(@.helperId == " + helper.id + ")].email").value("pat@test.local"));
 
+        mvc.perform(post("/api/admin/helpers/" + helper.id + "/verification")
+                        .header("Authorization", "Bearer " + admin).param("verified", "true"))
+                .andExpect(status().isConflict());
+
+        verifyIdentity(helper);
         mvc.perform(post("/api/admin/helpers/" + helper.id + "/verification")
                         .header("Authorization", "Bearer " + admin).param("verified", "true"))
                 .andExpect(status().isOk())
@@ -191,9 +198,20 @@ class LaunchReadinessIntegrationTest {
 
     private void publishAndVerify(Registered helper) throws Exception {
         publish(helper);
+                verifyIdentity(helper);
         mvc.perform(post("/api/admin/helpers/" + helper.id + "/verification")
                         .header("Authorization", "Bearer " + login("admin@test.local", "admin-test-password"))
                         .param("verified", "true"))
+                .andExpect(status().isOk());
+    }
+
+    private void verifyIdentity(Registered user) throws Exception {
+        mvc.perform(post("/api/account/identity-verification").header("Authorization", "Bearer " + user.token))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/admin/identity-verifications/" + user.id)
+                        .header("Authorization", "Bearer " + login("admin@test.local", "admin-test-password"))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"VERIFIED\",\"note\":\"Video identity check completed\"}"))
                 .andExpect(status().isOk());
     }
 

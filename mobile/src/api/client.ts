@@ -8,6 +8,8 @@ import type {
   DeleteAccountRequest,
   HelperProfileRequest,
   HelperResponse,
+  IdentityVerificationResponse,
+  IdentityVerificationStatus,
   LoginRequest,
   MeResponse,
   Page,
@@ -194,6 +196,9 @@ export const api = {
   resendVerification: () =>
     request<void>('/api/account/verify-email/resend', { method: 'POST' }),
 
+  requestIdentityVerification: () =>
+    request<IdentityVerificationResponse>('/api/account/identity-verification', { method: 'POST' }),
+
   searchHelpers: (query: {
     city?: string;
     maxRate?: number;
@@ -265,5 +270,16 @@ export const api = {
     request<AdminHelperResponse>(`/api/admin/helpers/${helperUserId}/verification`, {
       method: 'POST',
       query: { verified },
+    }),
+
+  adminListIdentityVerifications: (status: IdentityVerificationStatus = 'PENDING') =>
+    request<Page<IdentityVerificationResponse>>('/api/admin/identity-verifications', {
+      query: { status, size: 100 },
+    }),
+
+  adminDecideIdentityVerification: (userId: number, status: IdentityVerificationStatus, note?: string) =>
+    request<IdentityVerificationResponse>(`/api/admin/identity-verifications/${userId}`, {
+      method: 'POST',
+      body: { status, note },
     }),
 };

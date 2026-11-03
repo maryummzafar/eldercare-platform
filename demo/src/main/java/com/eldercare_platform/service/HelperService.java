@@ -6,6 +6,7 @@ import com.eldercare_platform.dto.HelperResponse;
 import com.eldercare_platform.entity.HelperProfile;
 import com.eldercare_platform.entity.User;
 import com.eldercare_platform.enums.ServiceType;
+import com.eldercare_platform.enums.IdentityVerificationStatus;
 import com.eldercare_platform.enums.UserRole;
 import com.eldercare_platform.exception.ApiException;
 import com.eldercare_platform.repository.HelperProfileRepository;
@@ -72,6 +73,7 @@ public class HelperService {
         Specification<HelperProfile> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(cb.isTrue(root.get("verified")));
+            predicates.add(cb.equal(root.get("user").get("identityVerificationStatus"), IdentityVerificationStatus.VERIFIED));
             predicates.add(cb.isTrue(root.get("acceptingBookings")));
 
             if (city != null && !city.isBlank()) {
@@ -95,7 +97,8 @@ public class HelperService {
         HelperProfile profile = helperProfileRepository.findByUserId(helperUserId)
                 .orElseThrow(() -> ApiException.notFound("Helper not found"));
 
-        if (!profile.isVerified()) {
+        if (!profile.isVerified()
+            || profile.getUser().getIdentityVerificationStatus() != IdentityVerificationStatus.VERIFIED) {
             throw ApiException.notFound("Helper not found");
         }
         return HelperResponse.from(profile);
@@ -115,6 +118,9 @@ public class HelperService {
                 .orElseThrow(() -> ApiException.notFound("Helper not found"));
         if (verified && !profile.getUser().isEmailVerified()) {
             throw ApiException.conflict("This helper has not confirmed their email address yet.");
+        }
+        if (verified && profile.getUser().getIdentityVerificationStatus() != IdentityVerificationStatus.VERIFIED) {
+            throw ApiException.conflict("This helper's identity must be verified before profile approval.");
         }
         profile.setVerified(verified);
         return AdminHelperResponse.from(profile);

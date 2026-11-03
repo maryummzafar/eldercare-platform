@@ -24,7 +24,7 @@ spring:
       # what is actually there and refuses to start if they have drifted; it no
       # longer alters anything itself.
       ddl-auto: ${JPA_DDL_AUTO:validate}
-    show-sql: ${JPA_SHOW_SQL:true}
+    show-sql: ${JPA_SHOW_SQL:false}
     # Keep the persistence context out of the view layer so lazy loads fail loudly
     # in the service tier instead of silently issuing queries during serialization.
     open-in-view: false
@@ -64,6 +64,8 @@ app:
     # Gmail: smtp.gmail.com / 587, your address, and an App Password (not your
     # normal password). Any provider with SMTP works the same way.
     host: ${MAIL_HOST:}
+    # Disable the development log-only sender in hosted environments.
+    log-only-enabled: ${MAIL_LOG_ONLY_ENABLED:true}
     port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}

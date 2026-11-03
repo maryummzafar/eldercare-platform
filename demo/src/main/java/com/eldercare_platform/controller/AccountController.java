@@ -2,9 +2,11 @@ package com.eldercare_platform.controller;
 
 import com.eldercare_platform.dto.DeleteAccountRequest;
 import com.eldercare_platform.dto.MeResponse;
+import com.eldercare_platform.dto.IdentityVerificationResponse;
 import com.eldercare_platform.dto.VerifyEmailRequest;
 import com.eldercare_platform.security.AuthenticatedUser;
 import com.eldercare_platform.service.AccountService;
+import com.eldercare_platform.service.IdentityVerificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class AccountController {
 
     private final AccountService accountService;
+    private final IdentityVerificationService identityVerificationService;
 
     /** The signed-in user as stored now, e.g. after confirming their email on another device. */
     @GetMapping("/me")
@@ -37,6 +40,13 @@ public class AccountController {
     public ResponseEntity<Void> resendVerification(@AuthenticationPrincipal AuthenticatedUser principal) {
         accountService.resendVerification(principal.getUser());
         return ResponseEntity.accepted().build();
+    }
+
+    /** Requests a manual video identity review; no video or document is uploaded here. */
+    @PostMapping("/identity-verification")
+    public IdentityVerificationResponse requestIdentityVerification(
+            @AuthenticationPrincipal AuthenticatedUser principal) {
+        return identityVerificationService.requestReview(principal.getUser());
     }
 
     /**

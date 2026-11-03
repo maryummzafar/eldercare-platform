@@ -1,11 +1,18 @@
 package com.eldercare_platform.controller;
 
 import com.eldercare_platform.dto.AdminHelperResponse;
+import com.eldercare_platform.dto.IdentityVerificationDecisionRequest;
+import com.eldercare_platform.dto.IdentityVerificationResponse;
+import com.eldercare_platform.enums.IdentityVerificationStatus;
+import com.eldercare_platform.security.AuthenticatedUser;
+import com.eldercare_platform.service.IdentityVerificationService;
 import com.eldercare_platform.service.HelperService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,6 +21,22 @@ import org.springframework.web.bind.annotation.*;
 public class AdminController {
 
     private final HelperService helperService;
+    private final IdentityVerificationService identityVerificationService;
+
+    @GetMapping("/identity-verifications")
+    public Page<IdentityVerificationResponse> listIdentityVerifications(
+            @RequestParam(defaultValue = "PENDING") IdentityVerificationStatus status,
+            @PageableDefault(size = 50) Pageable pageable) {
+        return identityVerificationService.listForAdmin(status, pageable);
+    }
+
+    @PostMapping("/identity-verifications/{userId}")
+    public IdentityVerificationResponse decideIdentityVerification(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @PathVariable Long userId,
+            @Valid @RequestBody IdentityVerificationDecisionRequest request) {
+        return identityVerificationService.decide(principal.getUser(), userId, request);
+    }
 
     /** The vetting queue by default; pass {@code verified=true} to review approved helpers. */
     @GetMapping("/helpers")

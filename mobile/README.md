@@ -37,6 +37,7 @@ To point at a deployed backend instead, set `extra.apiUrl` in `app.json`:
 | Auth   | Login, register as elder or helper, session restored from the keystore    |
 | Elder  | Search verified helpers by city and service, view a profile, request a booking, see and cancel bookings |
 | Helper | Create/edit profile with rate and offered services, accept/decline requests, start and complete visits |
+| Trust  | Request a manual identity video check and view status; admins review requests separately from helper approval |
 | Chat   | One thread per booking, reachable from any booking card and from a message notification |
 | Alerts | Bell with unread badge on every screen, plus a notification centre        |
 
@@ -53,6 +54,10 @@ and the server rejects anyone who is not on that booking.
 Routing is decided once, in [`app/index.tsx`](app/index.tsx), from the `role` the API
 returns at login. Admins land on the helper-approval queue.
 
+Identity verification currently provides the request queue and admin decision UI only.
+The video call is arranged out of band; the app does not capture or upload video or ID
+documents. Payment processing is not part of this milestone.
+
 On the web, signed-out visitors land on `/welcome`, the public front page. The legal
 pages (`/privacy`, `/terms`, `/delete-account`) need no sign-in, since Google Play links
 to them; their business details live in [`src/site.ts`](src/site.ts).
@@ -64,8 +69,15 @@ npx eas build --platform android --profile production   # .aab for Google Play
 npx eas build --platform android --profile preview      # installable .apk for testers
 ```
 
-Set the real API address in `eas.json` (`EXPO_PUBLIC_API_URL`) first. The website is
-built with `npx expo export --platform web` (see `../render.yaml`).
+Before building, set `EXPO_PUBLIC_API_URL` to the real HTTPS API address in the EAS
+`preview` and `production` environments. These profiles select those named EAS
+environments and no longer embed a placeholder host. EAS runs a pre-install check
+that rejects missing, local, placeholder, or non-HTTPS URLs. The Render website build
+also requires its `EXPO_PUBLIC_API_URL` environment variable (see `../render.yaml`).
+
+Browser sign-in stores its session in `localStorage`, which is not equivalent to the
+native Keychain/Keystore storage. Treat the web client as a controlled demo until a
+browser session design using HttpOnly cookies and CSRF protection is implemented.
 
 ## Design constraints
 

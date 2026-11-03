@@ -30,7 +30,10 @@
     "android": "expo start --android --port 8082",
     "ios": "expo start --ios --port 8082",
     "web": "expo start --web --port 8082",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check:release-api": "node scripts/check-release-api-url.mjs",
+    "test:release-config": "node --test scripts/check-release-api-url.test.mjs",
+    "eas-build-pre-install": "npm run check:release-api"
   },
   "private": true
 }

@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError, api } from '../../../src/api/client';
 import { SERVICE_LABELS } from '../../../src/api/types';
+import type { IdentityVerificationStatus } from '../../../src/api/types';
 import { useAuth } from '../../../src/auth/AuthContext';
 import type { HelperResponse, ServiceType } from '../../../src/api/types';
 import {
@@ -35,6 +36,9 @@ export default function HelperDetail() {
 
   const [helper, setHelper] = useState<HelperResponse | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [identityStatus, setIdentityStatus] = useState<IdentityVerificationStatus | null>(null);
+  const [identityLoading, setIdentityLoading] = useState(true);
+  const [identityBusy, setIdentityBusy] = useState(false);
 
   const [service, setService] = useState<ServiceType | null>(null);
   const [dayOffset, setDayOffset] = useState(1);
@@ -64,6 +68,21 @@ export default function HelperDetail() {
     };
   }, [helperId]);
 
+  useEffect(() => {
+    let cancelled = false;
+    api.me().then(
+      (me) => {
+        if (!cancelled) setIdentityStatus(me.identityVerificationStatus);
+      },
+      () => {},
+    ).finally(() => {
+      if (!cancelled) setIdentityLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Today only offers hours at least one hour away; picking today moves the time
   // forward if the chosen one has already gone.
   const availableHours = useMemo(() => {
@@ -88,6 +107,19 @@ export default function HelperDetail() {
   // Mirrors the server's estimate (rate x scheduled hours) so the elder sees the
   // number before committing. The server recomputes it and its value is the one that counts.
   const estimate = helper ? helper.hourlyRate * hours : 0;
+
+  async function requestIdentityReview() {
+    setIdentityBusy(true);
+    setError(null);
+    try {
+      const result = await api.requestIdentityVerification();
+      setIdentityStatus(result.status);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Could not request an identity check.');
+    } finally {
+      setIdentityBusy(false);
+    }
+  }
 
   async function book() {
     if (!service) {
@@ -158,6 +190,19 @@ export default function HelperDetail() {
                 // The server refuses bookings until the email is confirmed; say so
                 // up front rather than after they have filled everything in.
                 <Button label="Confirm email to book" onPress={() => router.push('/verify-email')} />
+              ) : identityLoading ? (
+                <Button label="Checking identity status" onPress={() => {}} busy disabled />
+              ) : identityStatus !== 'VERIFIED' ? (
+                identityStatus === 'PENDING' ? (
+                  <Notice tone="info" message="Your identity check is waiting for review. Our team will contact you to arrange a video call." />
+                ) : (
+                  <Button
+                    label={identityStatus === 'REJECTED' ? 'Request another video check' : 'Request video identity check'}
+                    icon="videocam-outline"
+                    onPress={requestIdentityReview}
+                    busy={identityBusy}
+                  />
+                )
               ) : (
                 <Button
                   label="Request booking"

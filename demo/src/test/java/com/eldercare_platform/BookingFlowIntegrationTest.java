@@ -50,6 +50,8 @@ class BookingFlowIntegrationTest {
         String elderToken = register("Ruth Elder", "ruth@test.local", "ELDER");
         String helperToken = register("Sam Student", "sam@test.local", "HELPER");
         long helperId = userIdFromRegistration("sam@test.local");
+        verifyIdentity(elderToken, userIdFromRegistration("ruth@test.local"));
+        verifyIdentity(helperToken, helperId);
 
         // Helper publishes a profile.
         mvc.perform(put("/api/helpers/me")
@@ -141,6 +143,8 @@ class BookingFlowIntegrationTest {
         String intruderToken = register("Nosy Elder", "elder2@test.local", "ELDER");
         String helperToken = register("Helper Two", "helper2@test.local", "HELPER");
         long helperId = userIdFromRegistration("helper2@test.local");
+        verifyIdentity(elderToken, userIdFromRegistration("elder1@test.local"));
+        verifyIdentity(helperToken, helperId);
 
         mvc.perform(put("/api/helpers/me")
                         .header("Authorization", "Bearer " + helperToken)
@@ -266,6 +270,18 @@ class BookingFlowIntegrationTest {
 
         return json.readTree(body).get("token").asText();
     }
+
+        private void verifyIdentity(String token, long userId) throws Exception {
+                mvc.perform(post("/api/account/identity-verification").header("Authorization", "Bearer " + token))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.status").value("PENDING"));
+                String adminToken = login("admin@test.local", "admin-test-password");
+                mvc.perform(post("/api/admin/identity-verifications/" + userId)
+                                                .header("Authorization", "Bearer " + adminToken)
+                                                .contentType(MediaType.APPLICATION_JSON)
+                                                .content("{\"status\":\"VERIFIED\",\"note\":\"Video identity check completed\"}"))
+                                .andExpect(status().isOk());
+        }
 
     private final Map<String, Long> registeredIds = new java.util.HashMap<>();
 

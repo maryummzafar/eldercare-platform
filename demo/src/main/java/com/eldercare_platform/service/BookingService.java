@@ -9,6 +9,7 @@ import com.eldercare_platform.enums.BookingStatus;
 import com.eldercare_platform.enums.NotificationType;
 import com.eldercare_platform.enums.ServiceType;
 import com.eldercare_platform.enums.UserRole;
+import com.eldercare_platform.enums.IdentityVerificationStatus;
 import com.eldercare_platform.exception.ApiException;
 import com.eldercare_platform.repository.BookingRepository;
 import com.eldercare_platform.repository.HelperProfileRepository;
@@ -54,6 +55,9 @@ public class BookingService {
         // person who made it.
         if (!elder.isEmailVerified()) {
             throw ApiException.forbidden("Please confirm your email address before booking.");
+        }
+        if (elder.getIdentityVerificationStatus() != IdentityVerificationStatus.VERIFIED) {
+            throw ApiException.forbidden("Please complete identity verification before booking.");
         }
 
         Instant start = request.getScheduledStart();

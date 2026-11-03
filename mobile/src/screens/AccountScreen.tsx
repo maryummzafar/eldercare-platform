@@ -1,8 +1,9 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 
 import { ApiError, api } from '../api/client';
+import type { IdentityVerificationStatus } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { confirm } from '../confirm';
 import {
@@ -35,6 +36,42 @@ export function AccountScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [identityStatus, setIdentityStatus] = useState<IdentityVerificationStatus | null>(null);
+  const [identityBusy, setIdentityBusy] = useState(false);
+  const [identityLoading, setIdentityLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      setIdentityLoading(true);
+      api.me()
+        .then((me) => {
+          if (active) {
+            setIdentityStatus(me.identityVerificationStatus);
+            setIdentityLoading(false);
+          }
+        })
+        .catch(() => {
+          if (active) setIdentityLoading(false);
+        });
+      return () => {
+        active = false;
+      };
+    }, []),
+  );
+
+  async function requestIdentityReview() {
+    setIdentityBusy(true);
+    setError(null);
+    try {
+      const result = await api.requestIdentityVerification();
+      setIdentityStatus(result.status);
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : 'Could not request identity verification.');
+    } finally {
+      setIdentityBusy(false);
+    }
+  }
 
   async function deleteAccount() {
     if (!password) {
@@ -91,6 +128,32 @@ export function AccountScreen() {
         <ListRow icon="shield-outline" label="Privacy policy" onPress={() => router.push('/privacy')} />
         <ListRow icon="document-text-outline" label="Terms of service" onPress={() => router.push('/terms')} last />
       </ListGroup>
+
+      {!isAdmin && (
+        <>
+          <SectionHeader title="Identity check" />
+          <Card>
+            <Body muted>
+              A member of our team will arrange a video call to confirm your identity. The app does not upload or store video or identity documents.
+            </Body>
+            {!!error && <Notice message={error} />}
+            {identityLoading ? (
+              <Notice tone="info" message="Checking your identity status." />
+            ) : identityStatus === 'VERIFIED' ? (
+              <Badge label="Identity verified" tone="success" icon="shield-checkmark" />
+            ) : identityStatus === 'PENDING' ? (
+              <Notice tone="info" message="Your request is waiting for our team to arrange a video check." />
+            ) : (
+              <Button
+                label={identityStatus === 'REJECTED' ? 'Request another identity check' : 'Request video identity check'}
+                icon="videocam-outline"
+                busy={identityBusy}
+                onPress={requestIdentityReview}
+              />
+            )}
+          </Card>
+        </>
+      )}
 
       <ListGroup>
         <ListRow icon="log-out-outline" label="Sign out" onPress={doSignOut} last />

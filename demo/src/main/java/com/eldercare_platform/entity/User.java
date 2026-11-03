@@ -1,6 +1,7 @@
 package com.eldercare_platform.entity;
 
 import com.eldercare_platform.enums.UserRole;
+import com.eldercare_platform.enums.IdentityVerificationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -49,6 +50,15 @@ public class User {
     @Builder.Default
     @Column(nullable = false)
     private boolean emailVerified = false;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "identity_verification_status", nullable = false, length = 24)
+    private IdentityVerificationStatus identityVerificationStatus = IdentityVerificationStatus.NOT_STARTED;
+
+    private Instant identityVerifiedAt;
+
+    private Instant identityVerificationUpdatedAt;
 
     /**
      * When the password last changed. Tokens issued before this are refused, so a

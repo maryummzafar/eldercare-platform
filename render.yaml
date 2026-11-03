@@ -51,6 +51,8 @@ services:
       # email is sent and nobody can confirm their account.
       - key: MAIL_HOST
         sync: false
+      - key: MAIL_LOG_ONLY_ENABLED
+        value: "false"
       - key: MAIL_PORT
         value: "587"
       - key: MAIL_USERNAME

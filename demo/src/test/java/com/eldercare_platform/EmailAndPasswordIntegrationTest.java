@@ -64,6 +64,9 @@ class EmailAndPasswordIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.emailVerified").value(true));
 
+        book(elder, helper).andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value(containsString("identity verification")));
+        verifyIdentity(elder);
         book(elder, helper).andExpect(status().isCreated());
     }
 
@@ -221,8 +224,19 @@ class EmailAndPasswordIntegrationTest {
 
     private void publishAndApprove(Account helper) throws Exception {
         publish(helper);
+                verifyIdentity(helper);
         mvc.perform(post("/api/admin/helpers/" + helper.id + "/verification")
                         .header("Authorization", "Bearer " + admin()).param("verified", "true"))
+                .andExpect(status().isOk());
+    }
+
+    private void verifyIdentity(Account account) throws Exception {
+        mvc.perform(post("/api/account/identity-verification").header("Authorization", "Bearer " + account.token))
+                .andExpect(status().isOk());
+        mvc.perform(post("/api/admin/identity-verifications/" + account.id)
+                        .header("Authorization", "Bearer " + admin())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"VERIFIED\",\"note\":\"Video identity check completed\"}"))
                 .andExpect(status().isOk());
     }
 

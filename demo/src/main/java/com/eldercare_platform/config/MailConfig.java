@@ -35,13 +35,16 @@ public class MailConfig {
             @Value("${app.mail.username:}") String username,
             @Value("${app.mail.password:}") String password,
             @Value("${app.mail.from:}") String from,
-            @Value("${app.mail.from-name:Eldercare}") String fromName) {
+            @Value("${app.mail.from-name:Eldercare}") String fromName,
+            @Value("${app.mail.log-only-enabled:true}") boolean logOnlyEnabled) {
 
         if (host.isBlank()) {
+            if (!logOnlyEnabled) {
+                throw new IllegalStateException("MAIL_HOST must be configured when log-only email is disabled");
+            }
             log.warn("MAIL_HOST is not set: emails will be written to this log, not sent. "
                     + "Fine for development; set MAIL_* before real users sign up.");
-            return (to, subject, body) ->
-                    log.info("EMAIL (not sent) to={} subject=\"{}\"\n{}", to, subject, body);
+            return (to, subject, body) -> log.info("Email not sent; configure MAIL_HOST to enable delivery");
         }
 
         JavaMailSenderImpl sender = new JavaMailSenderImpl();

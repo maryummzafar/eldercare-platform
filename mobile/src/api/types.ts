@@ -8,6 +8,7 @@
  */
 
 export type UserRole = 'ELDER' | 'HELPER' | 'ADMIN';
+export type IdentityVerificationStatus = 'NOT_STARTED' | 'PENDING' | 'NEEDS_REVIEW' | 'VERIFIED' | 'REJECTED';
 
 export type ServiceType =
   | 'HOSPITAL_VISIT'
@@ -63,6 +64,19 @@ export interface MeResponse {
   email: string;
   role: UserRole;
   emailVerified: boolean;
+  identityVerificationStatus: IdentityVerificationStatus;
+  identityVerifiedAt: string | null;
+}
+
+export interface IdentityVerificationResponse {
+  userId: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: UserRole;
+  status: IdentityVerificationStatus;
+  verifiedAt: string | null;
+  updatedAt: string;
 }
 
 export interface ResetPasswordRequest {
@@ -116,6 +130,7 @@ export interface AdminHelperResponse {
   verified: boolean;
   /** Must be true before the helper can be approved. */
   emailVerified: boolean;
+  identityVerificationStatus: IdentityVerificationStatus;
   joinedAt: string;
 }
 

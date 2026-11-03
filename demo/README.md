@@ -64,8 +64,8 @@ PostgreSQL before deploying.
 
 | Role     | Who                                                              |
 |----------|------------------------------------------------------------------|
-| `ELDER`  | Books and pays for help.                                          |
-| `HELPER` | Student providing the service. Invisible until an admin verifies. |
+| `ELDER`  | Books and pays for help after identity verification.               |
+| `HELPER` | Student providing the service. Requires identity verification and separate admin approval. |
 | `ADMIN`  | Vets helpers. Cannot be created via signup — seeded via env vars. |
 
 ## API
@@ -117,8 +117,30 @@ written to the server log instead, which is what development and tests use.
 | GET    | `/api/helpers/me`          | helper | The caller's own profile.                    |
 | PUT    | `/api/helpers/me`          | helper | Create or update: bio, hourlyRate, city, offeredServices, acceptingBookings. |
 
-A helper is not searchable until **both** `verified` (admin-granted) and
-`acceptingBookings` (helper's own toggle) are true.
+A helper is not searchable until identity status is `VERIFIED`, `verified` (admin-granted),
+and `acceptingBookings` (helper's own toggle) are all true. Identity verification and
+platform approval are separate decisions. Existing helper approvals are preserved by the
+migration, but existing users start with identity status `NOT_STARTED` and must complete
+the new check before they appear in search.
+
+### Identity verification
+
+| Method | Path | Who | Effect |
+|--------|------|-----|--------|
+| POST | `/api/account/identity-verification` | elder/helper | Requests a manual video identity review; status becomes `PENDING`. |
+| GET | `/api/admin/identity-verifications?status=PENDING` | admin | Lists requests by status, oldest first. `NEEDS_REVIEW` can be queried for follow-up. |
+| POST | `/api/admin/identity-verifications/{userId}` | admin | Records `NEEDS_REVIEW`, `VERIFIED`, or `REJECTED`, plus an optional audit note. |
+
+The app does not capture or upload video or identity documents. The current workflow only
+queues the request and records an administrator's decision after an out-of-band video call.
+No video-call or automated identity-provider integration is implemented yet. Do not mark
+a request `VERIFIED` until the live check is actually completed. Elders must be verified
+before booking; helpers must be verified before admin approval and public discovery.
+The configured `ADMIN_EMAIL` receives a generic email when a request is submitted; the
+customer receives an email when the status changes. These emails contain no identity
+documents, video, or internal review notes. Set `ADMIN_EMAIL` and working SMTP settings
+before launch; without an admin email, requests remain visible in the queue but no alert
+can be delivered.
 
 ### Bookings
 
@@ -172,6 +194,7 @@ it) and on every incoming chat message.
 | GET    | `/api/account/me`                  |          | The caller's profile, including `emailVerified`. |
 | POST   | `/api/account/verify-email`        | code     | Confirms the email address.                    |
 | POST   | `/api/account/verify-email/resend` |          | 202. Sends a new code (once a minute).         |
+| POST   | `/api/account/identity-verification` |        | Queues a manual video identity review.         |
 | POST   | `/api/account/delete`              | password | 204. Permanently deletes the caller's account. |
 
 Required by Google Play. The user row is anonymised rather than removed, because
@@ -186,6 +209,8 @@ user's details. Refused with 409 while a visit is in progress, and for admins.
 |--------|-------------------------------------------------|---------------------------------|
 | GET    | `/api/admin/helpers?verified=false`             | The vetting queue, oldest first, with contact details. `verified=true` lists approved helpers. |
 | POST   | `/api/admin/helpers/{userId}/verification?verified=true` | Vets a helper (`false` revokes). |
+| GET    | `/api/admin/identity-verifications?status=PENDING` | Lists identity-check requests. |
+| POST   | `/api/admin/identity-verifications/{userId}` | Records a review decision. |
 
 ## Limits and errors
 

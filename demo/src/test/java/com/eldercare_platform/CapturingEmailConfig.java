@@ -40,6 +40,22 @@ public class CapturingEmailConfig {
         public long countTo(String to) {
             return sent.stream().filter(m -> m.to().equalsIgnoreCase(to)).count();
         }
+
+        public String latestSubject(String to) {
+            return latest(to).subject();
+        }
+
+        public String latestBody(String to) {
+            return latest(to).body();
+        }
+
+        private Sent latest(String to) {
+            for (int i = sent.size() - 1; i >= 0; i--) {
+                Sent mail = sent.get(i);
+                if (mail.to().equalsIgnoreCase(to)) return mail;
+            }
+            throw new AssertionError("No email was sent to " + to);
+        }
     }
 
     @Bean

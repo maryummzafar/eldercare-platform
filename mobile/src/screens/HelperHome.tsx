@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { api } from '../api/client';
-import type { BookingResponse, HelperResponse } from '../api/types';
+import type { BookingResponse, HelperResponse, IdentityVerificationStatus } from '../api/types';
 import { useAuth } from '../auth/AuthContext';
 import { BookingCard } from '../components/BookingCard';
 import { ConfirmEmailBanner } from '../components/ConfirmEmailBanner';
@@ -30,14 +30,16 @@ export function HelperHome() {
   const [bookings, setBookings] = useState<BookingResponse[] | null>(null);
   // undefined while loading, null when they have no profile yet.
   const [profile, setProfile] = useState<HelperResponse | null | undefined>(undefined);
+  const [identityStatus, setIdentityStatus] = useState<IdentityVerificationStatus | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     setLoadError(null);
-    const [page, mine] = await Promise.allSettled([
+    const [page, mine, me] = await Promise.allSettled([
       api.listBookings({ size: 100 }),
       api.getMyHelperProfile(),
+      api.me(),
     ]);
     if (page.status === 'fulfilled') setBookings(page.value.content);
     else {
@@ -47,6 +49,7 @@ export function HelperHome() {
     // A helper who has not filled in a profile yet gets a 404. That is the
     // expected first-run state, not an error worth showing.
     setProfile(mine.status === 'fulfilled' ? mine.value : null);
+    setIdentityStatus(me.status === 'fulfilled' ? me.value.identityVerificationStatus : null);
   }, []);
 
   useFocusEffect(
@@ -78,7 +81,9 @@ export function HelperHome() {
 
       <ConfirmEmailBanner />
 
-      {profile !== undefined && <ProfileStatus profile={profile} />}
+      {profile !== undefined && identityStatus !== null && (
+        <ProfileStatus profile={profile} identityStatus={identityStatus} />
+      )}
 
       <View style={styles.stats}>
         <Stat icon="mail-unread-outline" label="Requests" value={String(requests.length)} />
@@ -121,7 +126,35 @@ export function HelperHome() {
 }
 
 /** Tells the helper, in one card, the single next thing standing between them and bookings. */
-function ProfileStatus({ profile }: { profile: HelperResponse | null }) {
+function ProfileStatus({ profile, identityStatus }: {
+  profile: HelperResponse | null;
+  identityStatus: IdentityVerificationStatus;
+}) {
+  if (identityStatus !== 'VERIFIED') {
+    const pending = identityStatus === 'PENDING';
+    return (
+      <Card style={[styles.status, { backgroundColor: pending ? colors.warningSoft : colors.primarySoft }]}>
+        <View style={styles.statusRow}>
+          <Icon name={pending ? 'hourglass-outline' : 'videocam-outline'} size={22} color={pending ? colors.warning : colors.primary} />
+          <Text style={styles.statusTitle}>{pending ? 'Identity check in review' : 'Verify your identity'}</Text>
+        </View>
+        <Text style={styles.statusBody}>
+          {pending
+            ? 'Our team will contact you to arrange a video call. You will not appear in search until identity and helper approval are complete.'
+            : 'Request a video check with our team. You will become eligible for helper approval after your identity is verified.'}
+        </Text>
+        <View style={styles.statusAction}>
+          <Button
+            label={pending ? 'View identity check' : 'Request video check'}
+            variant="outline"
+            icon="videocam-outline"
+            compact
+            onPress={() => router.navigate('/account')}
+          />
+        </View>
+      </Card>
+    );
+  }
   if (!profile) {
     return (
       <Card style={[styles.status, { backgroundColor: colors.primary }]}>
@@ -143,7 +176,7 @@ function ProfileStatus({ profile }: { profile: HelperResponse | null }) {
           <Text style={styles.statusTitle}>Waiting for approval</Text>
         </View>
         <Text style={styles.statusBody}>
-          Our team checks every helper's ID before they can be booked. We will contact you shortly.
+          Your identity is verified. Our team separately reviews your helper profile before elders can find you.
         </Text>
       </Card>
     );

@@ -3,6 +3,7 @@ package com.eldercare_platform.dto;
 import com.eldercare_platform.entity.HelperProfile;
 import com.eldercare_platform.entity.User;
 import com.eldercare_platform.enums.ServiceType;
+import com.eldercare_platform.enums.IdentityVerificationStatus;
 import lombok.Builder;
 import lombok.Data;
 
@@ -29,6 +30,7 @@ public class AdminHelperResponse {
     private boolean verified;
     /** Must be true before the helper can be approved. */
     private boolean emailVerified;
+    private IdentityVerificationStatus identityVerificationStatus;
     private Instant joinedAt;
 
     public static AdminHelperResponse from(HelperProfile profile) {
@@ -46,6 +48,7 @@ public class AdminHelperResponse {
                 .offeredServices(Set.copyOf(profile.getOfferedServices()))
                 .verified(profile.isVerified())
                 .emailVerified(user.isEmailVerified())
+                .identityVerificationStatus(user.getIdentityVerificationStatus())
                 .joinedAt(user.getCreatedAt())
                 .build();
     }
