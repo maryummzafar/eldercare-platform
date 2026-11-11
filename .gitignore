@@ -8,3 +8,9 @@
 # OS files
 .DS_Store
 Thumbs.db
+
+# AI coding-tool files (kept locally, not published)
+CLAUDE.md
+AGENTS.md
+.claude/
+.github/agents/

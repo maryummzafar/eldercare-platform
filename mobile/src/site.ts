@@ -7,7 +7,7 @@ export const SITE = {
   appName: 'Eldercare',
   /** The person or registered business responsible for the app and its data. */
   operator: 'Maryum',
-  supportEmail: 'zafarmaryum43@gmail.com',
+  supportEmail: 'support@example.com',
   /**
    * The named person who handles privacy complaints, as Indian rules for online
    * platforms expect. Can be the founder at first.

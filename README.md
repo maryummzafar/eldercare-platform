@@ -41,8 +41,8 @@ runs on Android and the web from a single codebase.
 ## Repository layout
 
 ```
-demo/      Spring Boot API: setup, full endpoint reference, design notes
-mobile/    Expo app (Android and web): setup, screens, design constraints
+backend/     Spring Boot API: setup, full endpoint reference, design notes
+mobile/      Expo app (Android and web): setup, screens, design constraints
 render.yaml  Render configuration for the API, database and website
 ```
 
@@ -51,7 +51,7 @@ render.yaml  Render configuration for the API, database and website
 **Backend** (needs PostgreSQL):
 
 ```sh
-cd demo
+cd backend
 cp .env.example .env        # fill in DB_PASSWORD and JWT_SECRET
 ./mvnw spring-boot:run      # http://localhost:8081
 ./mvnw test                 # needs no database
@@ -65,7 +65,7 @@ npm install
 npm start                   # scan the QR code with Expo Go
 ```
 
-For details, see [demo/README.md](demo/README.md) and [mobile/README.md](mobile/README.md).
+For details, see [backend/README.md](backend/README.md) and [mobile/README.md](mobile/README.md).
 
 ## Not built yet
 

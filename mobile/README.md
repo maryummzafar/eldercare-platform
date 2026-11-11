@@ -4,7 +4,7 @@ React Native client for the Eldercare API. Expo SDK 57 · React 19 · TypeScript
 
 ## Running it
 
-The backend must be running first — see [`../demo/README.md`](../demo/README.md).
+The backend must be running first — see [`../backend/README.md`](../backend/README.md).
 
 ```sh
 npm install
